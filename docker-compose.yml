@@ -26,6 +26,7 @@ services:
       SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD:-archive}
       JWT_SECRET: ${JWT_SECRET:-change-me-in-local-env}
       GOOGLE_CLIENT_IDS: ${GOOGLE_CLIENT_IDS:-dev-google-client-id}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000}
     depends_on:
       db:
         condition: service_healthy

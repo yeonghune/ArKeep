@@ -1,5 +1,6 @@
 # Secrets / env
 client_secret_*.json
+secret.json
 .env
 .env.*
 !.env.example
@@ -29,3 +30,6 @@ Thumbs.db
 
 # TypeScript cache
 *.tsbuildinfo
+
+# Local secret memo
+seret.txt
