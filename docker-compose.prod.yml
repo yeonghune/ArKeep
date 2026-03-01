@@ -6,8 +6,6 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-article_archive}
       POSTGRES_USER: ${POSTGRES_USER:-archive}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-archive}
-    ports:
-      - "${DB_PORT:-5432}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -29,19 +27,11 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    ports:
-      - "${BACKEND_PORT:-8080}:8080"
-    develop:
-      watch:
-        - action: rebuild
-          path: ./backend/src
-        - action: rebuild
-          path: ./backend/pom.xml
 
   frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile.local
+      dockerfile: Dockerfile.prod
       args:
         NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${NEXT_PUBLIC_GOOGLE_CLIENT_ID:-dev-google-client-id}
         NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-/backend}
@@ -52,18 +42,17 @@ services:
       NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${NEXT_PUBLIC_GOOGLE_CLIENT_ID:-dev-google-client-id}
     depends_on:
       - backend
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: article-keep-nginx
+    depends_on:
+      - frontend
+      - backend
     ports:
-      - "${FRONTEND_PORT:-3000}:3000"
-    develop:
-      watch:
-        - action: rebuild
-          path: ./frontend/app
-        - action: rebuild
-          path: ./frontend/public
-        - action: rebuild
-          path: ./frontend/package.json
-        - action: rebuild
-          path: ./frontend/package-lock.json
+      - "${NGINX_PORT:-8080}:8080"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
 
 volumes:
   postgres_data:
