@@ -1,0 +1,25 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: article-keep-db-prod
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-article_archive}
+      POSTGRES_USER: ${POSTGRES_USER:-archive}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-archive}
+    volumes:
+      - postgres_data_prod:/var/lib/postgresql/data
+    networks:
+      - prod-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  postgres_data_prod:
+
+networks:
+  prod-net:
+    name: ${PROD_DOCKER_NETWORK:-arkeep-prod-net}
+    external: true

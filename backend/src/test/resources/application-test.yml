@@ -1,0 +1,24 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:arkeep;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    open-in-view: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+
+security:
+  jwt:
+    secret: test-secret-test-secret-test-secret-test-secret-test-secret
+    expiration-ms: 86400000
+  refresh-token:
+    expiration-ms: 86400000
+    cookie-secure: false
+  google:
+    client-ids: test-google-client-id
+

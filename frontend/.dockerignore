@@ -1,0 +1,13 @@
+.git
+node_modules
+.next
+npm-debug.log
+.idea
+.vscode
+coverage
+playwright-report
+test-results
+.turbo
+*.log
+.env
+.env.local

@@ -1,0 +1,46 @@
+# Secrets / env
+client_secret_*.json
+secret.json
+.env
+.env.*
+!.env.example
+.envrc
+
+# Frontend (Next.js / Node)
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/coverage/
+frontend/.turbo/
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local
+
+# Backend (Spring Boot / Maven)
+backend/target/
+backend/.m2/
+backend/.mvn/wrapper/maven-wrapper.jar
+backend/.env
+
+# IDE / editor
+.idea/
+.vscode/
+AGENTS.md
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Local secret memo
+secret.txt
