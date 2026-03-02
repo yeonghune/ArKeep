@@ -45,7 +45,7 @@ function toIsReadParam(filter: ArticleFilter): boolean | undefined {
 }
 
 export default function HomePage() {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [selectedCard, setSelectedCard] = useState<ArticleCard | null>(null);
@@ -165,6 +165,14 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
+    const mediaQuery = window.matchMedia("(min-width:1200px)");
+    const syncSidebarState = () => setIsSidebarOpen(mediaQuery.matches);
+    syncSidebarState();
+    mediaQuery.addEventListener("change", syncSidebarState);
+    return () => mediaQuery.removeEventListener("change", syncSidebarState);
+  }, []);
+
+  useEffect(() => {
     void fetchFacets();
   }, [fetchFacets]);
 
@@ -244,7 +252,7 @@ export default function HomePage() {
   }
 
   async function handleDelete(card: ArticleCard) {
-    if (!window.confirm("이 아티클을 삭제할까요?")) {
+    if (!window.confirm("아티클을 삭제할까요?")) {
       return;
     }
 
@@ -359,6 +367,7 @@ export default function HomePage() {
             categories={facets.categories}
             domains={facets.domains}
             topOffset={sidebarTopOffset}
+            onClose={() => setIsSidebarOpen(false)}
             onFilterChange={setFilter}
             onSortChange={setSort}
             onCategoryChange={setSelectedCategory}
@@ -379,7 +388,7 @@ export default function HomePage() {
               <Stack direction="row" spacing={1} alignItems="baseline">
                 <Typography sx={{ fontSize: 18, fontWeight: 700 }}>저장한 아티클</Typography>
                 <Typography sx={{ fontSize: 14, fontWeight: 400, color: "#64748b" }}>{totalItems}개 항목</Typography>
-                {isRefreshing && <Typography sx={{ fontSize: 12, color: "#64748b" }}>새로고침 중...</Typography>}
+                {isRefreshing && <Typography sx={{ fontSize: 12, color: "#64748b" }}>불러오는 중...</Typography>}
               </Stack>
 
               <Stack direction="row" spacing={1} alignItems="center">
@@ -476,3 +485,4 @@ export default function HomePage() {
     </ThemeProvider>
   );
 }
+

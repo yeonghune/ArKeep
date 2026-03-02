@@ -17,7 +17,6 @@ import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Toolbar from "@mui/material/Toolbar";
 import Tooltip from "@mui/material/Tooltip";
-import Typography from "@mui/material/Typography";
 import { useEffect, useMemo, useState, type MouseEvent } from "react";
 import { HEADER_HEIGHT, SYNC_BANNER_HEIGHT } from "../../home-constants";
 
@@ -88,19 +87,16 @@ export function TopNavigation({
       }}
     >
       <Toolbar sx={{ minHeight: `${HEADER_HEIGHT}px !important`, px: { xs: 2, sm: 3, lg: 4 } }}>
-        <Stack direction="row" spacing={1.5} alignItems="center" sx={{ minWidth: 200 }}>
-          <IconButton aria-label="사이드바 열기/닫기" onClick={onMenuClick}>
+        <Stack direction="row" spacing={1.25} alignItems="center" sx={{ minWidth: { xs: "auto", sm: 140 } }}>
+          <IconButton aria-label="Open filters" onClick={onMenuClick}>
             <MenuIcon />
           </IconButton>
           <Avatar sx={{ width: 32, height: 32, bgcolor: "primary.main" }}>
             <BookmarkIcon fontSize="small" />
           </Avatar>
-          <Typography variant="h6" sx={{ fontWeight: 700 }}>
-            ArKeep
-          </Typography>
         </Stack>
 
-        <Box sx={{ flex: 1, mx: 2 }}>
+        <Box sx={{ flex: 1, minWidth: 0, mx: { xs: 1, sm: 2 } }}>
           <TextField
             fullWidth
             size="small"
