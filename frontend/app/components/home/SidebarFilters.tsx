@@ -1,13 +1,17 @@
-import { useEffect, useState } from "react";
+﻿import CloseIcon from "@mui/icons-material/Close";
 import Autocomplete from "@mui/material/Autocomplete";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import FormControlLabel from "@mui/material/FormControlLabel";
+import IconButton from "@mui/material/IconButton";
 import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
 import TextField from "@mui/material/TextField";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
+import useMediaQuery from "@mui/material/useMediaQuery";
+import { useTheme } from "@mui/material/styles";
+import { useEffect, useMemo, useState } from "react";
 import { DRAWER_WIDTH } from "../../home-constants";
 import type { ArticleFilter, ArticleSort } from "../../home-types";
 
@@ -20,6 +24,7 @@ type Props = {
   categories: string[];
   domains: string[];
   topOffset: number;
+  onClose: () => void;
   onFilterChange: (value: ArticleFilter) => void;
   onSortChange: (value: ArticleSort) => void;
   onCategoryChange: (value: string) => void;
@@ -36,6 +41,7 @@ export function SidebarFilters({
   categories,
   domains,
   topOffset,
+  onClose,
   onFilterChange,
   onSortChange,
   onCategoryChange,
@@ -43,9 +49,11 @@ export function SidebarFilters({
   onReset
 }: Props) {
   const [openSelect, setOpenSelect] = useState<"category" | "domain" | null>(null);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("lg"));
 
   useEffect(() => {
-    if (openSelect == null) {
+    if (!(isMobile && open) && openSelect == null) {
       return;
     }
 
@@ -55,30 +63,11 @@ export function SidebarFilters({
     return () => {
       document.body.style.overflow = previousOverflow;
     };
-  }, [openSelect]);
+  }, [isMobile, open, openSelect]);
 
-  return (
-    <Box
-      component="aside"
-      sx={{
-        display: { xs: "none", lg: "block" },
-        position: "fixed",
-        left: 0,
-        top: `${topOffset}px`,
-        width: DRAWER_WIDTH,
-        height: `calc(100vh - ${topOffset}px)`,
-        bgcolor: "#fff",
-        borderRight: "1px solid #e2e8f0",
-        transform: open ? "translateX(0)" : "translateX(-100%)",
-        transition: "transform 180ms ease",
-        pointerEvents: open ? "auto" : "none"
-      }}
-    >
-      <Box sx={{ height: "100%", overflowY: "auto", p: 3 }}>
-        <Toolbar sx={{ minHeight: "0 !important", p: 0, mb: 2 }}>
-          <Typography sx={{ fontSize: 16, fontWeight: 700 }}>필터 및 정렬</Typography>
-        </Toolbar>
-
+  const panelBody = useMemo(
+    () => (
+      <>
         <Typography sx={{ fontSize: 12, fontWeight: 700, color: "#64748b", mb: 1.5 }}>상태</Typography>
         <RadioGroup value={filter} onChange={(_, value) => onFilterChange(value as ArticleFilter)} sx={{ mb: 3 }}>
           <FormControlLabel value="all" control={<Radio />} label="모두" />
@@ -139,7 +128,62 @@ export function SidebarFilters({
         <Button fullWidth variant="outlined" color="inherit" sx={{ py: 1.1 }} onClick={onReset}>
           초기화
         </Button>
+      </>
+    ),
+    [category, categories, domain, domains, filter, onCategoryChange, onDomainChange, onFilterChange, onReset, onSortChange, openSelect, sort]
+  );
+
+  return (
+    <>
+      {open && (
+        <Box
+          component="aside"
+          sx={{
+            display: { xs: "block", lg: "none" },
+            position: "fixed",
+            left: 0,
+            right: 0,
+            top: `${topOffset}px`,
+            bottom: 0,
+            bgcolor: "#fff",
+            zIndex: (muiTheme) => muiTheme.zIndex.appBar - 1,
+            overflowY: "auto",
+            p: 3
+          }}
+        >
+          <Toolbar sx={{ minHeight: "0 !important", p: 0, mb: 2, display: "flex", justifyContent: "space-between" }}>
+            <Typography sx={{ fontSize: 16, fontWeight: 700 }}>필터 및 정렬</Typography>
+            <IconButton aria-label="필터 닫기" onClick={onClose}>
+              <CloseIcon />
+            </IconButton>
+          </Toolbar>
+          {panelBody}
+        </Box>
+      )}
+
+      <Box
+        component="aside"
+        sx={{
+          display: { xs: "none", lg: "block" },
+          position: "fixed",
+          left: 0,
+          top: `${topOffset}px`,
+          width: DRAWER_WIDTH,
+          height: `calc(100vh - ${topOffset}px)`,
+          bgcolor: "#fff",
+          borderRight: "1px solid #e2e8f0",
+          transform: open ? "translateX(0)" : "translateX(-100%)",
+          transition: "transform 180ms ease",
+          pointerEvents: open ? "auto" : "none"
+        }}
+      >
+        <Box sx={{ height: "100%", overflowY: "auto", p: 3 }}>
+          <Toolbar sx={{ minHeight: "0 !important", p: 0, mb: 2 }}>
+            <Typography sx={{ fontSize: 16, fontWeight: 700 }}>필터 및 정렬</Typography>
+          </Toolbar>
+          {panelBody}
+        </Box>
       </Box>
-    </Box>
+    </>
   );
 }
