@@ -66,6 +66,12 @@ jobs:
             if [ ! -f .env ]; then
               cp .env.example .env
             fi
+            WORKFLOW_SHA="${{ github.event.workflow_run.head_sha }}"
+            if [ -n "$WORKFLOW_SHA" ]; then
+              export IMAGE_TAG="sha-${WORKFLOW_SHA:0:7}"
+            else
+              export IMAGE_TAG="latest"
+            fi
             export NEXT_PUBLIC_API_BASE_URL="${{ vars.NEXT_PUBLIC_API_BASE_URL }}"
             export SPRING_DATASOURCE_URL="${{ vars.SPRING_DATASOURCE_URL }}"
             export CORS_ALLOWED_ORIGINS="${{ secrets.CORS_ALLOWED_ORIGINS }}"
