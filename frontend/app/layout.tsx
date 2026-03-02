@@ -4,7 +4,12 @@ import React from "react";
 
 export const metadata: Metadata = {
   title: "ArKeep | Article Keep",
-  description: "Article Keep web app"
+  description: "Article Keep web app",
+  icons: {
+    icon: "/icon.svg",
+    shortcut: "/icon.svg",
+    apple: "/icon.svg"
+  }
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

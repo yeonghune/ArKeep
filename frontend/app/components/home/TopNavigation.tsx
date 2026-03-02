@@ -17,6 +17,7 @@ import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Toolbar from "@mui/material/Toolbar";
 import Tooltip from "@mui/material/Tooltip";
+import Typography from "@mui/material/Typography";
 import { useEffect, useMemo, useState, type MouseEvent } from "react";
 import { HEADER_HEIGHT, SYNC_BANNER_HEIGHT } from "../../home-constants";
 
@@ -94,6 +95,7 @@ export function TopNavigation({
           <Avatar sx={{ width: 32, height: 32, bgcolor: "primary.main" }}>
             <BookmarkIcon fontSize="small" />
           </Avatar>
+          <Typography sx={{ display: { xs: "none", lg: "block" }, fontSize: 22, fontWeight: 700 }}>ArKeep</Typography>
         </Stack>
 
         <Box sx={{ flex: 1, minWidth: 0, mx: { xs: 1, sm: 2 } }}>
