@@ -161,4 +161,4 @@ jobs:
             export NEXT_PUBLIC_GOOGLE_CLIENT_ID="${{ secrets.NEXT_PUBLIC_GOOGLE_CLIENT_ID }}"
             echo ${{ secrets.GHCR_TOKEN }} | docker login ghcr.io -u ${{ secrets.GHCR_USERNAME }} --password-stdin
             docker compose -p arkeep-app -f docker-compose.prod.yml pull
-            docker compose -p arkeep-app -f docker-compose.prod.yml up -d --force-recreate --remove-orphans
+            docker compose -p arkeep-app -f docker-compose.prod.yml up -d --force-recreate
