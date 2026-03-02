@@ -41,7 +41,7 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT }}
-          source: "docker-compose.prod.yml,docker-compose.prod.db.yml,nginx/nginx.conf"
+          source: ".env.example,docker-compose.prod.yml,docker-compose.prod.db.yml,nginx/nginx.conf"
           target: ${{ secrets.SSH_APP_DIR }}
 
       - name: Deploy over SSH
@@ -55,7 +55,18 @@ jobs:
           script: |
             set -e
             cd ${{ secrets.SSH_APP_DIR }}
+            if [ ! -f .env ]; then
+              cp .env.example .env
+            fi
+            export NEXT_PUBLIC_API_BASE_URL="${{ vars.NEXT_PUBLIC_API_BASE_URL }}"
+            export SPRING_DATASOURCE_URL="${{ vars.SPRING_DATASOURCE_URL }}"
+            export CORS_ALLOWED_ORIGINS="${{ secrets.CORS_ALLOWED_ORIGINS }}"
+            export JWT_SECRET="${{ secrets.JWT_SECRET }}"
+            export GOOGLE_CLIENT_IDS="${{ secrets.GOOGLE_CLIENT_IDS }}"
+            export SPRING_DATASOURCE_USERNAME="${{ vars.SPRING_DATASOURCE_USERNAME }}"
+            export SPRING_DATASOURCE_PASSWORD="${{ secrets.SPRING_DATASOURCE_PASSWORD }}"
+            export NEXT_PUBLIC_GOOGLE_CLIENT_ID="${{ secrets.NEXT_PUBLIC_GOOGLE_CLIENT_ID }}"
             echo ${{ secrets.GHCR_TOKEN }} | docker login ghcr.io -u ${{ secrets.GHCR_USERNAME }} --password-stdin
+            docker compose -f docker-compose.prod.yml down --remove-orphans
             docker compose -f docker-compose.prod.yml pull
-            docker compose -f docker-compose.prod.yml up -d
-            docker image prune -f
+            docker compose -f docker-compose.prod.yml up -d --force-recreate
