@@ -76,6 +76,10 @@ export function TopNavigation({
     }
   }
 
+  function handleHomeRefresh() {
+    window.location.reload();
+  }
+
   return (
     <AppBar
       position="fixed"
@@ -92,17 +96,24 @@ export function TopNavigation({
           <IconButton aria-label="Open filters" onClick={onMenuClick}>
             <MenuIcon />
           </IconButton>
-          <Avatar sx={{ width: 32, height: 32, bgcolor: "primary.main" }}>
-            <BookmarkIcon fontSize="small" />
-          </Avatar>
-          <Typography sx={{ display: { xs: "none", lg: "block" }, fontSize: 22, fontWeight: 700 }}>ArKeep</Typography>
+          <IconButton aria-label="새로고침" onClick={handleHomeRefresh} sx={{ p: 0.25 }}>
+            <Avatar sx={{ width: 32, height: 32, bgcolor: "primary.main" }}>
+              <BookmarkIcon fontSize="small" />
+            </Avatar>
+          </IconButton>
+          <Typography
+            onClick={handleHomeRefresh}
+            sx={{ display: { xs: "none", lg: "block" }, fontSize: 22, fontWeight: 700, cursor: "pointer" }}
+          >
+            ArKeep
+          </Typography>
         </Stack>
 
         <Box sx={{ flex: 1, minWidth: 0, mx: { xs: 1, sm: 2 } }}>
           <TextField
             fullWidth
             size="small"
-            placeholder="저장된 링크 검색..."
+            placeholder="제목 검색.."
             value={searchQuery}
             onChange={(event) => onSearchQueryChange(event.target.value)}
             InputProps={{

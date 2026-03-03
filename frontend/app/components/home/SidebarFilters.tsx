@@ -1,7 +1,6 @@
 ﻿import CloseIcon from "@mui/icons-material/Close";
 import Autocomplete from "@mui/material/Autocomplete";
 import Box from "@mui/material/Box";
-import Button from "@mui/material/Button";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import IconButton from "@mui/material/IconButton";
 import Radio from "@mui/material/Radio";
@@ -29,7 +28,6 @@ type Props = {
   onSortChange: (value: ArticleSort) => void;
   onCategoryChange: (value: string) => void;
   onDomainChange: (value: string) => void;
-  onReset: () => void;
 };
 
 export function SidebarFilters({
@@ -45,8 +43,7 @@ export function SidebarFilters({
   onFilterChange,
   onSortChange,
   onCategoryChange,
-  onDomainChange,
-  onReset
+  onDomainChange
 }: Props) {
   const [openSelect, setOpenSelect] = useState<"category" | "domain" | null>(null);
   const theme = useTheme();
@@ -124,13 +121,9 @@ export function SidebarFilters({
           renderInput={(params) => <TextField {...params} fullWidth size="small" placeholder="도메인을 선택하거나 직접 입력" />}
           sx={{ mb: 3 }}
         />
-
-        <Button fullWidth variant="outlined" color="inherit" sx={{ py: 1.1 }} onClick={onReset}>
-          초기화
-        </Button>
       </>
     ),
-    [category, categories, domain, domains, filter, onCategoryChange, onDomainChange, onFilterChange, onReset, onSortChange, openSelect, sort]
+    [category, categories, domain, domains, filter, onCategoryChange, onDomainChange, onFilterChange, onSortChange, openSelect, sort]
   );
 
   return (
