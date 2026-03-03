@@ -437,7 +437,9 @@ export default function HomePage() {
               </Box>
             ) : articles.length === 0 ? (
               <Box sx={{ display: "grid", placeItems: "center", py: 12, gap: 2 }}>
-                <Typography sx={{ color: "#64748b" }}>{showCenteredAddCta ? emptyStateMessage : "현재 조건에 맞는 아티클이 없습니다."}</Typography>
+                <Typography sx={{ color: "#64748b", fontSize: { xs: 18, sm: 20 }, fontWeight: 600, textAlign: "center" }}>
+                  {showCenteredAddCta ? emptyStateMessage : "현재 조건에 맞는 아티클이 없습니다."}
+                </Typography>
                 {showCenteredAddCta && (
                   <Button variant="contained" onClick={() => setIsSaveModalOpen(true)} startIcon={<AddIcon />}>
                     추가
