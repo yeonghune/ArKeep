@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AddIcon from "@mui/icons-material/Add";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
 import CssBaseline from "@mui/material/CssBaseline";
 import Fab from "@mui/material/Fab";
@@ -54,7 +55,7 @@ export default function HomePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [listError, setListError] = useState<string | null>(null);
-  const [filter, setFilter] = useState<ArticleFilter>("all");
+  const [filter, setFilter] = useState<ArticleFilter>("unread");
   const [sort, setSort] = useState<ArticleSort>("latest");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedDomain, setSelectedDomain] = useState("");
@@ -63,6 +64,8 @@ export default function HomePage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
   const [totalItems, setTotalItems] = useState(0);
+  const [allArticleCount, setAllArticleCount] = useState(0);
+  const [unreadArticleCount, setUnreadArticleCount] = useState(0);
   const [mutatingArticleId, setMutatingArticleId] = useState<number | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isSyncBannerDismissed, setIsSyncBannerDismissed] = useState(false);
@@ -99,19 +102,25 @@ export default function HomePage() {
       setListError(null);
 
       try {
-        const response = await listArticles({
-          isRead: isReadParam,
-          sort,
-          q: searchQuery,
-          category: selectedCategory,
-          domain: selectedDomain,
-          page: targetPage,
-          size: PAGE_SIZE
-        });
+        const [response, allCountResponse, unreadCountResponse] = await Promise.all([
+          listArticles({
+            isRead: isReadParam,
+            sort,
+            q: searchQuery,
+            category: selectedCategory,
+            domain: selectedDomain,
+            page: targetPage,
+            size: PAGE_SIZE
+          }),
+          listArticles({ page: 1, size: 1 }),
+          listArticles({ isRead: false, page: 1, size: 1 })
+        ]);
         setArticles(response.items);
         setPage(response.page);
         setTotalPages(response.totalPages);
         setTotalItems(response.totalItems);
+        setAllArticleCount(allCountResponse.totalItems);
+        setUnreadArticleCount(unreadCountResponse.totalItems);
         setSelectedCard((current) => {
           if (!current) return null;
           const updated = response.items.find((item) => item.id === current.id);
@@ -132,6 +141,25 @@ export default function HomePage() {
     [isReadParam, sort, searchQuery, selectedCategory, selectedDomain]
   );
 
+  const hasActiveSearchOrFacet = useMemo(
+    () => searchQuery.length > 0 || selectedCategory.length > 0 || selectedDomain.length > 0,
+    [searchQuery, selectedCategory, selectedDomain]
+  );
+  const showCenteredAddCta = useMemo(() => {
+    if (isLoading || articles.length > 0 || hasActiveSearchOrFacet || filter !== "unread") {
+      return false;
+    }
+    return allArticleCount === 0 || unreadArticleCount === 0;
+  }, [allArticleCount, articles.length, filter, hasActiveSearchOrFacet, isLoading, unreadArticleCount]);
+  const emptyStateMessage = useMemo(() => {
+    if (allArticleCount === 0) {
+      return "읽고 싶은 아티클을 추가해보세요!";
+    }
+    if (unreadArticleCount === 0) {
+      return "모든 아티클을 읽으셨어요! 새로운 아티클을 추가해보는게 어떠신가요?";
+    }
+    return "현재 조건에 맞는 아티클이 없습니다.";
+  }, [allArticleCount, unreadArticleCount]);
   const syncSessionProfile = useCallback(async () => {
     try {
       const profile = await getMyProfile();
@@ -372,15 +400,6 @@ export default function HomePage() {
             onSortChange={setSort}
             onCategoryChange={setSelectedCategory}
             onDomainChange={setSelectedDomain}
-            onReset={() => {
-              setFilter("all");
-              setSort("latest");
-              setSelectedCategory("");
-              setSelectedDomain("");
-              setSearchInput("");
-              setSearchQuery("");
-              setPage(1);
-            }}
           />
 
           <Box component="main" sx={{ flex: 1, px: { xs: 2, sm: 3, lg: 4 }, py: 3 }}>
@@ -417,8 +436,13 @@ export default function HomePage() {
                 <CircularProgress size={28} />
               </Box>
             ) : articles.length === 0 ? (
-              <Box sx={{ display: "grid", placeItems: "center", py: 12 }}>
-                <Typography sx={{ color: "#64748b" }}>현재 조건에 맞는 아티클이 없습니다.</Typography>
+              <Box sx={{ display: "grid", placeItems: "center", py: 12, gap: 2 }}>
+                <Typography sx={{ color: "#64748b" }}>{showCenteredAddCta ? emptyStateMessage : "현재 조건에 맞는 아티클이 없습니다."}</Typography>
+                {showCenteredAddCta && (
+                  <Button variant="contained" onClick={() => setIsSaveModalOpen(true)} startIcon={<AddIcon />}>
+                    추가
+                  </Button>
+                )}
               </Box>
             ) : (
               <Stack spacing={3}>
@@ -462,9 +486,11 @@ export default function HomePage() {
           </Box>
         </Box>
 
-        <Fab color="primary" sx={{ position: "fixed", right: 32, bottom: 32 }} onClick={() => setIsSaveModalOpen(true)}>
-          <AddIcon />
-        </Fab>
+        {!showCenteredAddCta && (
+          <Fab color="primary" sx={{ position: "fixed", right: 32, bottom: 32 }} onClick={() => setIsSaveModalOpen(true)}>
+            <AddIcon />
+          </Fab>
+        )}
         <SaveLinkModal open={isSaveModalOpen} onClose={() => setIsSaveModalOpen(false)} categories={facets.categories} onSave={handleCreate} />
         <LoginModal open={isLoginModalOpen} onClose={() => setIsLoginModalOpen(false)} onGoogleCredential={handleGoogleCredential} />
         <GuestMigrationDialog
@@ -485,4 +511,3 @@ export default function HomePage() {
     </ThemeProvider>
   );
 }
-

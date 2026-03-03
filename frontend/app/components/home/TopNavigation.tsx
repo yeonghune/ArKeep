@@ -102,7 +102,7 @@ export function TopNavigation({
           <TextField
             fullWidth
             size="small"
-            placeholder="저장된 링크 검색..."
+            placeholder="제목 검색.."
             value={searchQuery}
             onChange={(event) => onSearchQueryChange(event.target.value)}
             InputProps={{
