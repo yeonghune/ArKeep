@@ -1,7 +1,6 @@
 services:
   backend:
-    build:
-      context: ./backend
+    image: ghcr.io/${GHCR_OWNER:-yeonghune}/arkeep-backend:${IMAGE_TAG:-latest}
     container_name: article-keep-backend
     environment:
       SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:-jdbc:postgresql://db:5432/article_archive}
@@ -14,12 +13,7 @@ services:
       - prod-net
 
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile.prod
-      args:
-        NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${NEXT_PUBLIC_GOOGLE_CLIENT_ID:-dev-google-client-id}
-        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-/backend}
+    image: ghcr.io/${GHCR_OWNER:-yeonghune}/arkeep-frontend:${IMAGE_TAG:-latest}
     container_name: article-keep-frontend
     environment:
       BACKEND_ORIGIN: ${BACKEND_ORIGIN:-http://backend:8080}
