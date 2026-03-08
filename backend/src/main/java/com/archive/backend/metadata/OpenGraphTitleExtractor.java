@@ -9,32 +9,46 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
+import java.util.HashSet;
+import java.util.Set;
+
 @Component
 @Primary
 public class OpenGraphTitleExtractor implements TitleExtractor {
 
     private static final Logger log = LoggerFactory.getLogger(OpenGraphTitleExtractor.class);
+    private static final int MAX_IFRAME_DEPTH = 2;
+    private static final int MAX_IFRAMES_PER_DOCUMENT = 5;
 
     @Override
     public OgMetadata extract(String rawUrl) {
         try {
-            Connection.Response response = Jsoup.connect(rawUrl)
-                    .userAgent("Mozilla/5.0")
-                    .referrer("https://www.google.com")
-                    .followRedirects(true)
-                    .timeout(5000)
-                    .execute();
+            Connection.Response response = connect(rawUrl).execute();
             Document document = response.parse();
 
             String title = readMeta(document, "og:title");
+            boolean rootHasOgTitle = title != null;
+            String description = readMeta(document, "og:description");
+            String imageUrl = readMeta(document, "og:image");
             if (title == null) {
                 title = readDocumentTitle(document);
             }
             if (title == null) {
                 title = readFirstHeading(document);
             }
-            String description = readMeta(document, "og:description");
-            String imageUrl = readMeta(document, "og:image");
+
+            if (title == null || description == null || imageUrl == null) {
+                OgMetadata iframeMetadata = readFromIframes(document, new HashSet<>(), 0);
+                if ((!rootHasOgTitle && iframeMetadata.title() != null) || title == null) {
+                    title = iframeMetadata.title();
+                }
+                if (description == null) {
+                    description = iframeMetadata.description();
+                }
+                if (imageUrl == null) {
+                    imageUrl = iframeMetadata.imageUrl();
+                }
+            }
 
             log.info("OG extract url={} status={} title={} descriptionPresent={} imagePresent={}",
                     rawUrl,
@@ -48,6 +62,83 @@ public class OpenGraphTitleExtractor implements TitleExtractor {
             log.warn("OG extract failed url={} message={}", rawUrl, ex.getMessage());
             return OgMetadata.empty();
         }
+    }
+
+    private Connection connect(String url) {
+        return Jsoup.connect(url)
+                .userAgent("Mozilla/5.0")
+                .referrer("https://www.google.com")
+                .followRedirects(true)
+                .timeout(5000);
+    }
+
+    private OgMetadata readFromIframes(Document document, Set<String> visitedUrls, int depth) {
+        if (depth >= MAX_IFRAME_DEPTH) {
+            return OgMetadata.empty();
+        }
+
+        String title = null;
+        String description = null;
+        String imageUrl = null;
+        int scanned = 0;
+
+        for (Element iframe : document.select("body iframe[src]")) {
+            if (scanned >= MAX_IFRAMES_PER_DOCUMENT) {
+                break;
+            }
+            scanned++;
+
+            String iframeUrl = iframe.absUrl("src");
+            if (iframeUrl == null || iframeUrl.isBlank() || !visitedUrls.add(iframeUrl)) {
+                continue;
+            }
+
+            try {
+                Document iframeDoc = connect(iframeUrl).get();
+
+                if (title == null) {
+                    title = readMeta(iframeDoc, "og:title");
+                    if (title == null) {
+                        title = readDocumentTitle(iframeDoc);
+                    }
+                    if (title == null) {
+                        title = readFirstHeading(iframeDoc);
+                    }
+                }
+                if (description == null) {
+                    description = readMeta(iframeDoc, "og:description");
+                }
+                if (imageUrl == null) {
+                    imageUrl = readMeta(iframeDoc, "og:image");
+                }
+
+                if (title != null && description != null && imageUrl != null) {
+                    break;
+                }
+
+                OgMetadata nested = readFromIframes(iframeDoc, visitedUrls, depth + 1);
+                if (title == null) {
+                    title = nested.title();
+                }
+                if (description == null) {
+                    description = nested.description();
+                }
+                if (imageUrl == null) {
+                    imageUrl = nested.imageUrl();
+                }
+
+                if (title != null && description != null && imageUrl != null) {
+                    break;
+                }
+            } catch (Exception ex) {
+                log.debug("iframe extract failed parent={} iframe={} message={}",
+                        document.location(),
+                        iframeUrl,
+                        ex.getMessage());
+            }
+        }
+
+        return new OgMetadata(title, description, imageUrl);
     }
 
     private String readMeta(Document document, String property) {

@@ -28,18 +28,29 @@ export function SyncBanner({ onLoginClick, onDismiss }: Props) {
       }}
     >
       <Container maxWidth="xl">
-        <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ height: `${SYNC_BANNER_HEIGHT}px` }}>
-          <Stack direction="row" spacing={1.5} alignItems="center">
+        <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ height: `${SYNC_BANNER_HEIGHT}px`, gap: 1 }}>
+          <Stack direction="row" spacing={1} alignItems="center" sx={{ minWidth: 0, flex: 1 }}>
             <CloudOffIcon color="primary" fontSize="small" />
-            <Typography variant="body2" sx={{ fontWeight: 500, color: "#334155" }}>
+            <Typography
+              variant="body2"
+              noWrap
+              sx={{
+                fontWeight: 500,
+                color: "#334155",
+                minWidth: 0,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                fontSize: { xs: 13, sm: 14 }
+              }}
+            >
               모든 기기에서 목록을 동기화하려면 로그인하세요.
             </Typography>
           </Stack>
-          <Stack direction="row" spacing={0.5} alignItems="center">
-            <Button color="primary" sx={{ fontWeight: 700, px: 1 }} onClick={onLoginClick}>
+          <Stack direction="row" spacing={0.25} alignItems="center" sx={{ flexShrink: 0 }}>
+            <Button color="primary" size="small" sx={{ fontWeight: 700, minWidth: 0, px: { xs: 0.5, sm: 1 } }} onClick={onLoginClick}>
               로그인
             </Button>
-            <IconButton size="small" sx={{ color: "#64748b" }} aria-label="알림 닫기" onClick={onDismiss}>
+            <IconButton size="small" sx={{ color: "#64748b", p: 0.5 }} aria-label="알림 닫기" onClick={onDismiss}>
               <CloseIcon fontSize="small" />
             </IconButton>
           </Stack>
