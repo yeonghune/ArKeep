@@ -76,6 +76,7 @@ function ensureGoogleScript(): Promise<void> {
 
 export function LoginModal({ open, onClose, onGoogleCredential }: Props) {
   const buttonContainerRef = useRef<HTMLDivElement | null>(null);
+  const [googleButtonWidth, setGoogleButtonWidth] = useState(320);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isBusy, setIsBusy] = useState(false);
 
@@ -124,6 +125,9 @@ export function LoginModal({ open, onClose, onGoogleCredential }: Props) {
         });
 
         if (buttonContainerRef.current) {
+          const containerWidth = Math.floor(buttonContainerRef.current.clientWidth);
+          const nextButtonWidth = Math.max(200, Math.min(320, containerWidth || 320));
+          setGoogleButtonWidth(nextButtonWidth);
           buttonContainerRef.current.innerHTML = "";
           window.google.accounts.id.renderButton(buttonContainerRef.current, {
             type: "standard",
@@ -131,7 +135,7 @@ export function LoginModal({ open, onClose, onGoogleCredential }: Props) {
             size: "large",
             text: "continue_with",
             shape: "pill",
-            width: 320
+            width: nextButtonWidth
           });
         }
       } catch {
@@ -153,6 +157,7 @@ export function LoginModal({ open, onClose, onGoogleCredential }: Props) {
       fullWidth
       PaperProps={{
         sx: {
+          m: { xs: 1.5, sm: 4 },
           borderRadius: 4,
           bgcolor: "#f8fafc",
           overflow: "hidden"
@@ -189,7 +194,10 @@ export function LoginModal({ open, onClose, onGoogleCredential }: Props) {
             </Alert>
           )}
 
-          <Box ref={buttonContainerRef} sx={{ display: "grid", justifyContent: "center" }} />
+          <Box
+            ref={buttonContainerRef}
+            sx={{ display: "grid", justifyContent: "center", width: "100%", maxWidth: `${googleButtonWidth}px`, mx: "auto" }}
+          />
         </Box>
       </Box>
     </Dialog>
