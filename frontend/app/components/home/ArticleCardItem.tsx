@@ -1,28 +1,22 @@
-﻿import { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import DriveFileRenameOutlineIcon from "@mui/icons-material/DriveFileRenameOutline";
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
-import Autocomplete from "@mui/material/Autocomplete";
 import Box from "@mui/material/Box";
-import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Chip from "@mui/material/Chip";
-import Dialog from "@mui/material/Dialog";
-import DialogActions from "@mui/material/DialogActions";
-import DialogContent from "@mui/material/DialogContent";
-import DialogTitle from "@mui/material/DialogTitle";
 import IconButton from "@mui/material/IconButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import Stack from "@mui/material/Stack";
-import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { formatRelativeTime, getCategoryColor, getCategoryLabel } from "../../home-data";
 import type { ArticleCard } from "../../home-types";
 import { ArticleMedia } from "./ArticleMedia";
 import { CardSource } from "./CardSource";
+import { CategoryEditDialog } from "./CategoryEditDialog";
 
 type Props = {
   card: ArticleCard;
@@ -36,7 +30,6 @@ type Props = {
 export function ArticleCardItem({ card, categories, isBusy = false, onDelete, onUpdateCategory, onClick }: Props) {
   const [menuAnchorEl, setMenuAnchorEl] = useState<HTMLElement | null>(null);
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
-  const [categoryInput, setCategoryInput] = useState(card.category ?? "");
   const isRead = card.isRead;
   const statusLabel = isRead ? "읽음" : "읽지 않음";
   const categoryLabel = getCategoryLabel(card.category);
@@ -48,7 +41,6 @@ export function ArticleCardItem({ card, categories, isBusy = false, onDelete, on
   const closeMenu = () => setMenuAnchorEl(null);
 
   function openCategoryDialog() {
-    setCategoryInput(card.category ?? "");
     setIsCategoryDialogOpen(true);
     closeMenu();
   }
@@ -184,71 +176,21 @@ export function ArticleCardItem({ card, categories, isBusy = false, onDelete, on
         </MenuItem>
       </Menu>
 
-      <Dialog
+      <CategoryEditDialog
         open={isCategoryDialogOpen}
-        onClose={() => {
-          if (!isBusy) {
+        card={card}
+        categories={availableCategories}
+        isBusy={isBusy}
+        onClose={() => setIsCategoryDialogOpen(false)}
+        onSave={async (category) => {
+          try {
+            await onUpdateCategory(card, category);
             setIsCategoryDialogOpen(false);
+          } catch {
+            // Errors are surfaced by parent list error UI.
           }
         }}
-        maxWidth="xs"
-        fullWidth
-      >
-        <DialogTitle>카테고리 수정</DialogTitle>
-        <DialogContent>
-          <Autocomplete
-            freeSolo
-            options={availableCategories}
-            value={categoryInput}
-            inputValue={categoryInput}
-            onChange={(_, value) => setCategoryInput((value ?? "").trim())}
-            onInputChange={(_, value) => setCategoryInput(value)}
-            ListboxProps={{
-              sx: {
-                maxHeight: 220,
-                overflowY: "auto"
-              }
-            }}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                label="카테고리"
-                placeholder="카테고리를 선택하거나 직접 입력"
-                fullWidth
-                sx={{ mt: 1 }}
-              />
-            )}
-          />
-        </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2 }}>
-          <Button
-            color="inherit"
-            disabled={isBusy}
-            onClick={() => {
-              setIsCategoryDialogOpen(false);
-            }}
-          >
-            취소
-          </Button>
-          <Button
-            variant="contained"
-            disabled={isBusy}
-            onClick={() => {
-              const nextCategory = categoryInput.trim();
-              void (async () => {
-                try {
-                  await onUpdateCategory(card, nextCategory.length > 0 ? nextCategory : null);
-                  setIsCategoryDialogOpen(false);
-                } catch {
-                  // Errors are surfaced by parent list error UI.
-                }
-              })();
-            }}
-          >
-            저장
-          </Button>
-        </DialogActions>
-      </Dialog>
+      />
     </>
   );
 }

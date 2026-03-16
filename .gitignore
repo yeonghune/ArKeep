@@ -26,6 +26,7 @@ backend/.env
 # IDE / editor
 .idea/
 .vscode/
+.claude/
 AGENTS.md
 
 # OS files
