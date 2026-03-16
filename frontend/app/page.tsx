@@ -77,10 +77,12 @@ export default function HomePage() {
   const [guestMigrationCount, setGuestMigrationCount] = useState(0);
   const [isMigratingGuestData, setIsMigratingGuestData] = useState(false);
   const hasFetchedRef = useRef(false);
-  const [viewMode, setViewMode] = useState<"card" | "list">(() => {
-    if (typeof window === "undefined") return "card";
-    return (localStorage.getItem("arkeep_view_mode") as "card" | "list") ?? "card";
-  });
+  const [viewMode, setViewMode] = useState<"card" | "list">("card");
+
+  useEffect(() => {
+    const saved = localStorage.getItem("arkeep_view_mode") as "card" | "list" | null;
+    if (saved === "list" || saved === "card") setViewMode(saved);
+  }, []);
 
   useEffect(() => {
     localStorage.setItem("arkeep_view_mode", viewMode);
