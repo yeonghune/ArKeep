@@ -2,6 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AddIcon from "@mui/icons-material/Add";
+import GridViewIcon from "@mui/icons-material/GridView";
+import ViewListIcon from "@mui/icons-material/ViewList";
+import IconButton from "@mui/material/IconButton";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -19,6 +22,7 @@ import { loginWithGoogle, logout } from "../lib/auth";
 import { getMyProfile } from "../lib/profile";
 import { clearSession, getStoredSession, saveSession, sessionChangedEventName, type Session } from "../lib/session";
 import { ArticleCardItem } from "./components/home/ArticleCardItem";
+import { ArticleListItem } from "./components/home/ArticleListItem";
 import { ArticleDetailModal } from "./components/home/ArticleDetailModal";
 import { GuestMigrationDialog } from "./components/home/GuestMigrationDialog";
 import { LoginModal } from "./components/home/LoginModal";
@@ -73,6 +77,14 @@ export default function HomePage() {
   const [guestMigrationCount, setGuestMigrationCount] = useState(0);
   const [isMigratingGuestData, setIsMigratingGuestData] = useState(false);
   const hasFetchedRef = useRef(false);
+  const [viewMode, setViewMode] = useState<"card" | "list">(() => {
+    if (typeof window === "undefined") return "card";
+    return (localStorage.getItem("arkeep_view_mode") as "card" | "list") ?? "card";
+  });
+
+  useEffect(() => {
+    localStorage.setItem("arkeep_view_mode", viewMode);
+  }, [viewMode]);
 
   const selectedCardBusy = selectedCard != null && mutatingArticleId === selectedCard.id;
   const isReadParam = useMemo(() => toIsReadParam(filter), [filter]);
@@ -410,7 +422,23 @@ export default function HomePage() {
                 {isRefreshing && <Typography sx={{ fontSize: 12, color: "#64748b" }}>불러오는 중...</Typography>}
               </Stack>
 
-              <Stack direction="row" spacing={1} alignItems="center">
+              <Stack direction="row" spacing={0.5} alignItems="center">
+                <IconButton
+                  size="small"
+                  onClick={() => setViewMode("card")}
+                  color={viewMode === "card" ? "primary" : "default"}
+                  aria-label="카드 보기"
+                >
+                  <GridViewIcon fontSize="small" />
+                </IconButton>
+                <IconButton
+                  size="small"
+                  onClick={() => setViewMode("list")}
+                  color={viewMode === "list" ? "primary" : "default"}
+                  aria-label="목록 보기"
+                >
+                  <ViewListIcon fontSize="small" />
+                </IconButton>
                 <TextField
                   select
                   size="small"
@@ -421,7 +449,6 @@ export default function HomePage() {
                   <MenuItem value="latest">최신순</MenuItem>
                   <MenuItem value="oldest">오래된순</MenuItem>
                 </TextField>
-
               </Stack>
             </Stack>
 
@@ -448,29 +475,45 @@ export default function HomePage() {
               </Box>
             ) : (
               <Stack spacing={3}>
-                <Box
-                  sx={{
-                    display: "grid",
-                    gap: 3,
-                    gridTemplateColumns: {
-                      xs: "1fr",
-                      sm: "repeat(2, minmax(0, 1fr))",
-                      lg: "repeat(4, minmax(0, 1fr))"
-                    }
-                  }}
-                >
-                  {articles.map((card) => (
-                    <ArticleCardItem
-                      key={card.id}
-                      card={card}
-                      categories={facets.categories}
-                      isBusy={mutatingArticleId === card.id}
-                      onDelete={handleDelete}
-                      onUpdateCategory={handleUpdateCategory}
-                      onClick={() => setSelectedCard(card)}
-                    />
-                  ))}
-                </Box>
+                {viewMode === "card" ? (
+                  <Box
+                    sx={{
+                      display: "grid",
+                      gap: 3,
+                      gridTemplateColumns: {
+                        xs: "1fr",
+                        sm: "repeat(2, minmax(0, 1fr))",
+                        lg: "repeat(4, minmax(0, 1fr))"
+                      }
+                    }}
+                  >
+                    {articles.map((card) => (
+                      <ArticleCardItem
+                        key={card.id}
+                        card={card}
+                        categories={facets.categories}
+                        isBusy={mutatingArticleId === card.id}
+                        onDelete={handleDelete}
+                        onUpdateCategory={handleUpdateCategory}
+                        onClick={() => setSelectedCard(card)}
+                      />
+                    ))}
+                  </Box>
+                ) : (
+                  <Box sx={{ border: "1px solid #e2e8f0", borderRadius: 3, overflow: "hidden" }}>
+                    {articles.map((card) => (
+                      <ArticleListItem
+                        key={card.id}
+                        card={card}
+                        categories={facets.categories}
+                        isBusy={mutatingArticleId === card.id}
+                        onDelete={handleDelete}
+                        onUpdateCategory={handleUpdateCategory}
+                        onClick={() => setSelectedCard(card)}
+                      />
+                    ))}
+                  </Box>
+                )}
 
                 {totalPages > 1 && (
                   <Stack direction="row" justifyContent="center">

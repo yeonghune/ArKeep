@@ -29,7 +29,7 @@ public class OpenGraphTitleExtractor implements TitleExtractor {
             String title = readMeta(document, "og:title");
             boolean rootHasOgTitle = title != null;
             String description = readMeta(document, "og:description");
-            String imageUrl = readMeta(document, "og:image");
+            String imageUrl = readMetaUrl(document, "og:image");
             if (title == null) {
                 title = readDocumentTitle(document);
             }
@@ -109,7 +109,7 @@ public class OpenGraphTitleExtractor implements TitleExtractor {
                     description = readMeta(iframeDoc, "og:description");
                 }
                 if (imageUrl == null) {
-                    imageUrl = readMeta(iframeDoc, "og:image");
+                    imageUrl = readMetaUrl(iframeDoc, "og:image");
                 }
 
                 if (title != null && description != null && imageUrl != null) {
@@ -139,6 +139,15 @@ public class OpenGraphTitleExtractor implements TitleExtractor {
         }
 
         return new OgMetadata(title, description, imageUrl);
+    }
+
+    private String readMetaUrl(Document document, String property) {
+        Element element = document.selectFirst("meta[property='" + property + "']");
+        if (element == null) return null;
+        String abs = element.absUrl("content");
+        if (!abs.isBlank()) return abs;
+        String raw = element.attr("content").trim();
+        return raw.isBlank() ? null : raw;
     }
 
     private String readMeta(Document document, String property) {
