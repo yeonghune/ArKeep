@@ -4,6 +4,11 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     DATABASE_URL: str = "postgresql+asyncpg://archive:archive@db:5432/article_archive"
+    POSTGRES_USER: str = ""
+    POSTGRES_PASSWORD: str = ""
+    POSTGRES_HOST: str = "db"
+    POSTGRES_PORT: int = 5432
+    POSTGRES_DB: str = ""
     JWT_SECRET: str = "change-me"
     JWT_EXPIRATION_MS: int = 86_400_000        # 24h
     REFRESH_TOKEN_EXPIRATION_MS: int = 1_209_600_000  # 14d
