@@ -4,6 +4,11 @@ services:
     container_name: article-keep-backend
     environment:
       DATABASE_URL: "postgresql+asyncpg://${POSTGRES_USER:-archive}:${POSTGRES_PASSWORD:-archive}@db:5432/${POSTGRES_DB:-article_archive}"
+      POSTGRES_USER: ${POSTGRES_USER:-archive}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-archive}
+      POSTGRES_DB: ${POSTGRES_DB:-article_archive}
+      POSTGRES_HOST: db
+      POSTGRES_PORT: "5432"
       JWT_SECRET: ${JWT_SECRET:-change-me-in-local-env}
       GOOGLE_CLIENT_IDS: ${GOOGLE_CLIENT_IDS:-dev-google-client-id}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000}
