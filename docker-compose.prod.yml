@@ -3,12 +3,11 @@ services:
     image: ghcr.io/${GHCR_OWNER:-yeonghune}/arkeep-backend:${IMAGE_TAG:-latest}
     container_name: article-keep-backend
     environment:
-      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:-jdbc:postgresql://db:5432/article_archive}
-      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME:-archive}
-      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD:-archive}
+      DATABASE_URL: "postgresql+asyncpg://${POSTGRES_USER:-archive}:${POSTGRES_PASSWORD:-archive}@db:5432/${POSTGRES_DB:-article_archive}"
       JWT_SECRET: ${JWT_SECRET:-change-me-in-local-env}
       GOOGLE_CLIENT_IDS: ${GOOGLE_CLIENT_IDS:-dev-google-client-id}
       CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000}
+      REFRESH_TOKEN_COOKIE_SECURE: "true"
     networks:
       - prod-net
 
@@ -16,7 +15,7 @@ services:
     image: ghcr.io/${GHCR_OWNER:-yeonghune}/arkeep-frontend:${IMAGE_TAG:-latest}
     container_name: article-keep-frontend
     environment:
-      BACKEND_ORIGIN: ${BACKEND_ORIGIN:-http://backend:8080}
+      BACKEND_ORIGIN: ${BACKEND_ORIGIN:-http://backend:8000}
       NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-/backend}
       NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${NEXT_PUBLIC_GOOGLE_CLIENT_ID:-dev-google-client-id}
     depends_on:
