@@ -92,7 +92,7 @@ export function TopNavigation({
       }}
     >
       <Toolbar sx={{ minHeight: `${HEADER_HEIGHT}px !important`, px: { xs: 2, sm: 3, lg: 4 } }}>
-        <Stack direction="row" spacing={1.25} alignItems="center" sx={{ minWidth: { xs: "auto", sm: 140 } }}>
+        <Stack direction="row" spacing={1.25} alignItems="center" sx={{ minWidth: { xs: "auto", sm: 140, md: 180 } }}>
           <IconButton aria-label="Open filters" onClick={onMenuClick}>
             <MenuIcon />
           </IconButton>
@@ -103,7 +103,7 @@ export function TopNavigation({
           </IconButton>
           <Typography
             onClick={handleHomeRefresh}
-            sx={{ display: { xs: "none", lg: "block" }, fontSize: 22, fontWeight: 700, cursor: "pointer" }}
+            sx={{ display: { xs: "none", md: "block" }, fontSize: 22, fontWeight: 700, cursor: "pointer" }}
           >
             ArKeep
           </Typography>
