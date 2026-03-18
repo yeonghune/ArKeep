@@ -17,15 +17,12 @@ type Props = {
   filter: ArticleFilter;
   sort: ArticleSort;
   category: string;
-  domain: string;
   categories: string[];
-  domains: string[];
   topOffset: number;
   onClose: () => void;
   onFilterChange: (value: ArticleFilter) => void;
   onSortChange: (value: ArticleSort) => void;
   onCategoryChange: (value: string) => void;
-  onDomainChange: (value: string) => void;
 };
 
 export function SidebarFilters({
@@ -33,17 +30,14 @@ export function SidebarFilters({
   filter,
   sort,
   category,
-  domain,
   categories,
-  domains,
   topOffset,
   onClose: _onClose,
   onFilterChange,
   onSortChange,
   onCategoryChange,
-  onDomainChange
 }: Props) {
-  const [expandedSection, setExpandedSection] = useState<"filter" | "category" | "domain" | null>("filter");
+  const [expandedSection, setExpandedSection] = useState<"filter" | "category" | null>("filter");
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("lg"));
 
@@ -56,7 +50,7 @@ export function SidebarFilters({
     };
   }, [isMobile, open]);
 
-  const toggleSection = (section: "filter" | "category" | "domain") => {
+  const toggleSection = (section: "filter" | "category") => {
     setExpandedSection((prev) => (prev === section ? null : section));
   };
 
@@ -121,49 +115,6 @@ export function SidebarFilters({
         </Box>
       </Collapse>
 
-      {/* 도메인 아코디언 */}
-      <Box
-        onClick={() => toggleSection("domain")}
-        sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer", mb: 1 }}
-      >
-        <Typography sx={{ fontSize: 12, fontWeight: 700, color: "#64748b" }}>도메인</Typography>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-          {domain && (
-            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-              <Box component="img" src={`https://www.google.com/s2/favicons?domain=${domain}&sz=16`} sx={{ width: 14, height: 14 }} />
-              <Typography sx={{ fontSize: 11, color: "#3b82f6", fontWeight: 600 }}>{domain}</Typography>
-            </Box>
-          )}
-          {expandedSection === "domain" ? <ExpandLessIcon sx={{ fontSize: 16, color: "#94a3b8" }} /> : <ExpandMoreIcon sx={{ fontSize: 16, color: "#94a3b8" }} />}
-        </Box>
-      </Box>
-      <Collapse in={expandedSection === "domain"} sx={{ mb: 3 }}>
-        <Box sx={{ border: "1px solid #e2e8f0", borderRadius: 1, overflow: "hidden" }}>
-          {["", ...domains].map((d) => (
-            <Box
-              key={d || "__all__"}
-              onClick={() => { onDomainChange(d); setExpandedSection(null); }}
-              sx={{
-                px: 1.5, py: 1, cursor: "pointer", fontSize: 13,
-                display: "flex", alignItems: "center", gap: 1,
-                bgcolor: domain === d ? "#eff6ff" : "transparent",
-                color: domain === d ? "#3b82f6" : "#1e293b",
-                fontWeight: domain === d ? 600 : 400,
-                "&:hover": { bgcolor: domain === d ? "#eff6ff" : "#f8fafc" },
-                borderBottom: "1px solid #f1f5f9",
-                "&:last-child": { borderBottom: "none" }
-              }}
-            >
-              {d ? (
-                <>
-                  <Box component="img" src={`https://www.google.com/s2/favicons?domain=${d}&sz=16`} sx={{ width: 16, height: 16, flexShrink: 0 }} />
-                  {d}
-                </>
-              ) : "모두"}
-            </Box>
-          ))}
-        </Box>
-      </Collapse>
     </>
   );
 

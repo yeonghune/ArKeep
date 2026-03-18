@@ -93,8 +93,7 @@ export default function HomePage() {
 
   const hasActiveSearchOrFacet =
     filterState.searchQuery.length > 0 ||
-    filterState.selectedCategory.length > 0 ||
-    filterState.selectedDomain.length > 0;
+    filterState.selectedCategory.length > 0;
 
   const showCenteredAddCta = useMemo(() => {
     if (
@@ -161,15 +160,12 @@ export default function HomePage() {
             filter={filterState.filter}
             sort={filterState.sort}
             category={filterState.selectedCategory}
-            domain={filterState.selectedDomain}
             categories={articleState.facets.categories}
-            domains={articleState.facets.domains}
             topOffset={sidebarTopOffset}
             onClose={() => setIsSidebarOpen(false)}
             onFilterChange={filterState.setFilter}
             onSortChange={filterState.setSort}
             onCategoryChange={filterState.setSelectedCategory}
-            onDomainChange={filterState.setSelectedDomain}
           />
 
           <Box component="main" sx={{ flex: 1, px: { xs: 2, sm: 3, lg: 4 }, pt: 1, pb: 3 }}>

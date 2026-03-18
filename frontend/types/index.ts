@@ -26,5 +26,4 @@ export type ArticlePage = {
 
 export type ArticleFacets = {
   categories: string[];
-  domains: string[];
 };
