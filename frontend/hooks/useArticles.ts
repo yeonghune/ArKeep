@@ -23,7 +23,6 @@ export type UseArticlesInput = {
   sort: ArticleSort;
   searchQuery: string;
   selectedCategory: string;
-  selectedDomain: string;
   page: number;
   setPage: (page: number) => void;
 };
@@ -54,12 +53,11 @@ export function useArticles({
   sort,
   searchQuery,
   selectedCategory,
-  selectedDomain,
   page,
   setPage,
 }: UseArticlesInput): UseArticlesReturn {
   const [articles, setArticles] = useState<ArticleCard[]>([]);
-  const [facets, setFacets] = useState<ArticleFacets>({ categories: [], domains: [] });
+  const [facets, setFacets] = useState<ArticleFacets>({ categories: [] });
   const [totalPages, setTotalPages] = useState(0);
   const [totalItems, setTotalItems] = useState(0);
   const [allArticleCount, setAllArticleCount] = useState(0);
@@ -96,7 +94,6 @@ export function useArticles({
             sort,
             q: searchQuery,
             category: selectedCategory,
-            domain: selectedDomain,
             page: targetPage,
             size: PAGE_SIZE,
           }),
@@ -125,7 +122,7 @@ export function useArticles({
         }
       }
     },
-    [isReadParam, sort, searchQuery, selectedCategory, selectedDomain]
+    [isReadParam, sort, searchQuery, selectedCategory]
   );
 
   useEffect(() => {
