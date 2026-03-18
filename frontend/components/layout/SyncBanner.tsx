@@ -1,4 +1,4 @@
-﻿import CloseIcon from "@mui/icons-material/Close";
+import CloseIcon from "@mui/icons-material/Close";
 import CloudOffIcon from "@mui/icons-material/CloudOff";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -6,7 +6,7 @@ import Container from "@mui/material/Container";
 import IconButton from "@mui/material/IconButton";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
-import { SYNC_BANNER_HEIGHT } from "../../home-constants";
+import { SYNC_BANNER_HEIGHT } from "@/constants/layout";
 
 type Props = {
   onLoginClick: () => void;

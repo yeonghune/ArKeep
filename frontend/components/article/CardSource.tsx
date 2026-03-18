@@ -1,7 +1,7 @@
 import LinkIcon from "@mui/icons-material/Link";
 import Box from "@mui/material/Box";
 import { useState } from "react";
-import type { ArticleCard } from "../../home-types";
+import type { ArticleCard } from "@/types";
 
 export function CardSource({ card }: { card: ArticleCard }) {
   const [src, setSrc] = useState(() =>

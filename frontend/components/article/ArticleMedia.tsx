@@ -1,5 +1,5 @@
 import Box from "@mui/material/Box";
-import type { ArticleCard } from "../../home-types";
+import type { ArticleCard } from "@/types";
 
 const PLACEHOLDER_SRC = "/thumbnail-placeholder.svg";
 

@@ -1,6 +1,6 @@
-import { api, ApiRequestError } from "./api";
+import { api, getBootstrapPromise } from "./api";
 import { getStoredSession } from "./session";
-import type { ArticleCard, ArticleFacets, ArticlePage, ArticleSort } from "../app/home-types";
+import type { ArticleCard, ArticleFacets, ArticlePage, ArticleSort } from "@/types";
 
 const LOCAL_ARTICLES_KEY = "arkeep_guest_articles_v1";
 const DEFAULT_PAGE_SIZE = 8;
@@ -58,31 +58,15 @@ function hasAccessToken(): boolean {
   return Boolean(getStoredSession()?.token);
 }
 
-function shouldFallbackToLocal(error: unknown): boolean {
-  if (error instanceof ApiRequestError) {
-    return error.status === 401 || error.code === "UNAUTHORIZED";
-  }
-  if (error instanceof Error) {
-    const message = error.message.toLowerCase();
-    return message.includes("session expired") || message.includes("(401)") || message.includes("authentication required");
-  }
-  return false;
-}
-
 async function withServerFallback<T>(serverCall: () => Promise<T>, localCall: () => Promise<T> | T): Promise<T> {
+  await getBootstrapPromise();
+
   if (hasAccessToken()) {
     return serverCall();
   }
 
-  try {
-    // Try server first so api.ts can trigger bootstrap refresh from cookie.
-    return await serverCall();
-  } catch (error) {
-    if (shouldFallbackToLocal(error)) {
-      return await localCall();
-    }
-    throw error;
-  }
+  // Bootstrap completed with no token → confirmed guest → use localStorage directly
+  return localCall();
 }
 
 function toQuery(params: ListArticlesParams): string {
