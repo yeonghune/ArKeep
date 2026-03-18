@@ -103,7 +103,7 @@ export function TopNavigation({
           </IconButton>
           <Typography
             onClick={handleHomeRefresh}
-            sx={{ display: { xs: "none", lg: "block" }, fontSize: 22, fontWeight: 700, cursor: "pointer" }}
+            sx={{ display: { xs: "none", sm: "block" }, fontSize: 22, fontWeight: 700, cursor: "pointer" }}
           >
             ArKeep
           </Typography>
