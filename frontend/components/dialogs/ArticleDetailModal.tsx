@@ -34,7 +34,7 @@ export function ArticleDetailModal({ card, onClose, onToggleRead, onSaveMemo, is
 
   if (!card) return null;
 
-  const statusLabel = card.isRead ? "읽음" : "읽지 않음";
+  const statusLabel = card.isRead ? "열람" : "미열람";
   const categoryLabel = getCategoryLabel(card.category);
 
   return (
@@ -146,7 +146,7 @@ export function ArticleDetailModal({ card, onClose, onToggleRead, onSaveMemo, is
               void onToggleRead(card);
             }}
           >
-            {card.isRead ? "읽지 않음으로 표시" : "읽음으로 표시"}
+            {card.isRead ? "미열람으로 표시" : "열람으로 표시"}
           </Button>
         </Stack>
       </Box>

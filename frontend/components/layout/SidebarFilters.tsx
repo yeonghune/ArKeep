@@ -68,8 +68,8 @@ export function SidebarFilters({
         <Typography sx={{ fontSize: 12, fontWeight: 700, color: "#64748b", mb: 1.5 }}>상태</Typography>
         <RadioGroup value={filter} onChange={(_, value) => onFilterChange(value as ArticleFilter)} sx={{ mb: 3 }}>
           <FormControlLabel value="all" control={<Radio />} label="모두" />
-          <FormControlLabel value="read" control={<Radio />} label="읽음" />
-          <FormControlLabel value="unread" control={<Radio />} label="읽지 않음" />
+          <FormControlLabel value="read" control={<Radio />} label="열람" />
+          <FormControlLabel value="unread" control={<Radio />} label="미열람" />
         </RadioGroup>
 
         <Typography sx={{ fontSize: 12, fontWeight: 700, color: "#64748b", mb: 1.5 }}>정렬</Typography>
