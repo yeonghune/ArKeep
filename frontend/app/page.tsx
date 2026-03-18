@@ -51,11 +51,16 @@ const GuestMigrationDialog = dynamic(
   () => import("@/components/dialogs/GuestMigrationDialog").then((m) => ({ default: m.GuestMigrationDialog })),
   { ssr: false }
 );
+const OnboardingDialog = dynamic(
+  () => import("@/components/dialogs/OnboardingDialog").then((m) => ({ default: m.OnboardingDialog })),
+  { ssr: false }
+);
 
 export default function HomePage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isOnboardingDismissed, setIsOnboardingDismissed] = useState(false);
   const [viewMenuAnchor, setViewMenuAnchor] = useState<HTMLElement | null>(null);
   const [filterMenuAnchor, setFilterMenuAnchor] = useState<HTMLElement | null>(null);
 
@@ -315,6 +320,11 @@ export default function HomePage() {
           open={isLoginModalOpen}
           onClose={() => setIsLoginModalOpen(false)}
           onGoogleCredential={(idToken) => sessionState.handleGoogleCredential(idToken, afterAuthChange)}
+        />
+        <OnboardingDialog
+          open={!sessionState.session && !isOnboardingDismissed}
+          onGuestContinue={() => setIsOnboardingDismissed(true)}
+          onGoogleCredential={(idToken) => sessionState.handleGoogleCredential(idToken, afterAuthChange).then(() => setIsOnboardingDismissed(true))}
         />
         <GuestMigrationDialog
           open={sessionState.isMigrationDialogOpen}
