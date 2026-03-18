@@ -92,8 +92,8 @@ export function TopNavigation({
       }}
     >
       <Toolbar sx={{ minHeight: `${HEADER_HEIGHT}px !important`, px: { xs: 2, sm: 3, lg: 4 } }}>
-        <Stack direction="row" spacing={0} alignItems="center" sx={{ minWidth: { xs: "auto", sm: 180 } }}>
-          <IconButton aria-label="Open filters" onClick={onMenuClick} sx={{ p: 1 }}>
+        <Stack direction="row" spacing={1.25} alignItems="center" sx={{ minWidth: { xs: "auto", sm: 140 } }}>
+          <IconButton aria-label="Open filters" onClick={onMenuClick}>
             <MenuIcon />
           </IconButton>
           <IconButton aria-label="새로고침" onClick={handleHomeRefresh} sx={{ p: 0.25 }}>

@@ -29,7 +29,7 @@ import { useArticleFilter } from "@/hooks/useArticleFilter";
 import { useArticles } from "@/hooks/useArticles";
 import { useSession } from "@/hooks/useSession";
 import { useViewMode } from "@/hooks/useViewMode";
-import type { ArticleSort } from "@/types";
+import type { ArticleFilter } from "@/types";
 
 const ArticleDetailModal = dynamic(
   () => import("@/components/dialogs/ArticleDetailModal").then((m) => ({ default: m.ArticleDetailModal })),
@@ -198,12 +198,13 @@ export default function HomePage() {
                 <TextField
                   select
                   size="small"
-                  value={filterState.sort}
-                  onChange={(event) => filterState.setSort(event.target.value as ArticleSort)}
+                  value={filterState.filter}
+                  onChange={(event) => filterState.setFilter(event.target.value as ArticleFilter)}
                   sx={{ display: { lg: "none" }, minWidth: 120 }}
                 >
-                  <MenuItem value="latest">최신순</MenuItem>
-                  <MenuItem value="oldest">오래된순</MenuItem>
+                  <MenuItem value="all">모두</MenuItem>
+                  <MenuItem value="read">읽음</MenuItem>
+                  <MenuItem value="unread">읽지 않음</MenuItem>
                 </TextField>
               </Stack>
             </Stack>
