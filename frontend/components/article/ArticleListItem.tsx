@@ -113,7 +113,7 @@ export const ArticleListItem = memo(function ArticleListItem({ card, categories,
         </Box>
 
         {/* 읽음 dot */}
-        <Tooltip title={isRead ? "읽음" : "읽지 않음"}>
+        <Tooltip title={isRead ? "열람" : "미열람"}>
           <Box
             sx={{
               width: 8,

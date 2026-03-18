@@ -3,7 +3,11 @@
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import AddIcon from "@mui/icons-material/Add";
+import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
+import DoneAllIcon from "@mui/icons-material/DoneAll";
+import FilterListIcon from "@mui/icons-material/FilterList";
 import GridViewIcon from "@mui/icons-material/GridView";
+import RadioButtonUncheckedIcon from "@mui/icons-material/RadioButtonUnchecked";
 import ViewListIcon from "@mui/icons-material/ViewList";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
@@ -12,10 +16,11 @@ import CircularProgress from "@mui/material/CircularProgress";
 import CssBaseline from "@mui/material/CssBaseline";
 import Fab from "@mui/material/Fab";
 import IconButton from "@mui/material/IconButton";
+import ListItemIcon from "@mui/material/ListItemIcon";
+import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import Pagination from "@mui/material/Pagination";
 import Stack from "@mui/material/Stack";
-import TextField from "@mui/material/TextField";
 import { ThemeProvider } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import { HOME_THEME } from "@/constants/theme";
@@ -29,7 +34,6 @@ import { useArticleFilter } from "@/hooks/useArticleFilter";
 import { useArticles } from "@/hooks/useArticles";
 import { useSession } from "@/hooks/useSession";
 import { useViewMode } from "@/hooks/useViewMode";
-import type { ArticleFilter } from "@/types";
 
 const ArticleDetailModal = dynamic(
   () => import("@/components/dialogs/ArticleDetailModal").then((m) => ({ default: m.ArticleDetailModal })),
@@ -52,6 +56,8 @@ export default function HomePage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [viewMenuAnchor, setViewMenuAnchor] = useState<HTMLElement | null>(null);
+  const [filterMenuAnchor, setFilterMenuAnchor] = useState<HTMLElement | null>(null);
 
   const [viewMode, setViewMode] = useViewMode();
   const filterState = useArticleFilter();
@@ -169,7 +175,7 @@ export default function HomePage() {
           <Box component="main" sx={{ flex: 1, px: { xs: 2, sm: 3, lg: 4 }, pt: 1, pb: 3 }}>
             <Stack direction="row" justifyContent="space-between" alignItems="center" flexWrap="wrap" rowGap={1} sx={{ mb: 3 }}>
               <Stack direction="row" spacing={1} alignItems="baseline">
-                <Typography sx={{ fontSize: 18, fontWeight: 700, whiteSpace: "nowrap" }}>저장한 아티클</Typography>
+                <Typography sx={{ fontSize: 18, fontWeight: 700, whiteSpace: "nowrap" }}>모든 아티클</Typography>
                 <Typography sx={{ fontSize: 14, fontWeight: 400, color: "#64748b", whiteSpace: "nowrap" }}>
                   {articleState.totalItems}개 항목
                 </Typography>
@@ -179,33 +185,36 @@ export default function HomePage() {
               </Stack>
 
               <Stack direction="row" spacing={0.5} alignItems="center">
-                <IconButton
-                  size="small"
-                  onClick={() => setViewMode("card")}
-                  color={viewMode === "card" ? "primary" : "default"}
-                  aria-label="카드 보기"
-                >
-                  <GridViewIcon fontSize="small" />
+                <IconButton size="small" onClick={(e) => setViewMenuAnchor(e.currentTarget)}>
+                  {viewMode === "card" ? <GridViewIcon fontSize="small" /> : <ViewListIcon fontSize="small" />}
                 </IconButton>
-                <IconButton
-                  size="small"
-                  onClick={() => setViewMode("list")}
-                  color={viewMode === "list" ? "primary" : "default"}
-                  aria-label="목록 보기"
-                >
-                  <ViewListIcon fontSize="small" />
+                <Menu anchorEl={viewMenuAnchor} open={Boolean(viewMenuAnchor)} onClose={() => setViewMenuAnchor(null)}>
+                  <MenuItem selected={viewMode === "card"} onClick={() => { setViewMode("card"); setViewMenuAnchor(null); }} sx={{ fontSize: 13 }}>
+                    <ListItemIcon><GridViewIcon sx={{ fontSize: 16 }} /></ListItemIcon>
+                    카드형
+                  </MenuItem>
+                  <MenuItem selected={viewMode === "list"} onClick={() => { setViewMode("list"); setViewMenuAnchor(null); }} sx={{ fontSize: 13 }}>
+                    <ListItemIcon><ViewListIcon sx={{ fontSize: 16 }} /></ListItemIcon>
+                    리스트형
+                  </MenuItem>
+                </Menu>
+                <IconButton size="small" sx={{ display: { lg: "none" } }} onClick={(e) => setFilterMenuAnchor(e.currentTarget)}>
+                  <FilterListIcon fontSize="small" />
                 </IconButton>
-                <TextField
-                  select
-                  size="small"
-                  value={filterState.filter}
-                  onChange={(event) => filterState.setFilter(event.target.value as ArticleFilter)}
-                  sx={{ display: { lg: "none" }, minWidth: 120 }}
-                >
-                  <MenuItem value="all">모두</MenuItem>
-                  <MenuItem value="read">읽음</MenuItem>
-                  <MenuItem value="unread">읽지 않음</MenuItem>
-                </TextField>
+                <Menu anchorEl={filterMenuAnchor} open={Boolean(filterMenuAnchor)} onClose={() => setFilterMenuAnchor(null)}>
+                  <MenuItem selected={filterState.filter === "all"} onClick={() => { filterState.setFilter("all"); setFilterMenuAnchor(null); }} sx={{ fontSize: 13 }}>
+                    <ListItemIcon><DoneAllIcon sx={{ fontSize: 16 }} /></ListItemIcon>
+                    모두
+                  </MenuItem>
+                  <MenuItem selected={filterState.filter === "read"} onClick={() => { filterState.setFilter("read"); setFilterMenuAnchor(null); }} sx={{ fontSize: 13 }}>
+                    <ListItemIcon><CheckCircleOutlineIcon sx={{ fontSize: 16 }} /></ListItemIcon>
+                    열람
+                  </MenuItem>
+                  <MenuItem selected={filterState.filter === "unread"} onClick={() => { filterState.setFilter("unread"); setFilterMenuAnchor(null); }} sx={{ fontSize: 13 }}>
+                    <ListItemIcon><RadioButtonUncheckedIcon sx={{ fontSize: 16 }} /></ListItemIcon>
+                    미열람
+                  </MenuItem>
+                </Menu>
               </Stack>
             </Stack>
 
