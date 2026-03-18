@@ -1,16 +1,14 @@
-import CloseIcon from "@mui/icons-material/Close";
-import Autocomplete from "@mui/material/Autocomplete";
+import ExpandLessIcon from "@mui/icons-material/ExpandLess";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import Box from "@mui/material/Box";
+import Collapse from "@mui/material/Collapse";
 import FormControlLabel from "@mui/material/FormControlLabel";
-import IconButton from "@mui/material/IconButton";
 import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
-import TextField from "@mui/material/TextField";
-import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { useTheme } from "@mui/material/styles";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { DRAWER_WIDTH } from "@/constants/layout";
 import type { ArticleFilter, ArticleSort } from "@/types";
 
@@ -39,91 +37,134 @@ export function SidebarFilters({
   categories,
   domains,
   topOffset,
-  onClose,
+  onClose: _onClose,
   onFilterChange,
   onSortChange,
   onCategoryChange,
   onDomainChange
 }: Props) {
-  const [openSelect, setOpenSelect] = useState<"category" | "domain" | null>(null);
+  const [expandedSection, setExpandedSection] = useState<"filter" | "category" | "domain" | null>("filter");
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("lg"));
 
   useEffect(() => {
-    if (!(isMobile && open) && openSelect == null) {
-      return;
-    }
-
+    if (!(isMobile && open)) return;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-
     return () => {
       document.body.style.overflow = previousOverflow;
     };
-  }, [isMobile, open, openSelect]);
+  }, [isMobile, open]);
 
-  const panelBody = useMemo(
-    () => (
-      <>
-        <Typography sx={{ fontSize: 12, fontWeight: 700, color: "#64748b", mb: 1.5 }}>상태</Typography>
-        <RadioGroup value={filter} onChange={(_, value) => onFilterChange(value as ArticleFilter)} sx={{ mb: 3 }}>
-          <FormControlLabel value="all" control={<Radio />} label="모두" />
-          <FormControlLabel value="read" control={<Radio />} label="열람" />
-          <FormControlLabel value="unread" control={<Radio />} label="미열람" />
-        </RadioGroup>
+  const toggleSection = (section: "filter" | "category" | "domain") => {
+    setExpandedSection((prev) => (prev === section ? null : section));
+  };
 
-        <Typography sx={{ fontSize: 12, fontWeight: 700, color: "#64748b", mb: 1.5 }}>정렬</Typography>
-        <RadioGroup value={sort} onChange={(_, value) => onSortChange(value as ArticleSort)} sx={{ mb: 3 }}>
-          <FormControlLabel value="latest" control={<Radio />} label="최신순" />
-          <FormControlLabel value="oldest" control={<Radio />} label="오래된순" />
-        </RadioGroup>
+  const panelBody = (
+    <>
+      {/* 필터 및 정렬 아코디언 */}
+      <Box
+        onClick={() => toggleSection("filter")}
+        sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer", mb: 1 }}
+      >
+        <Typography sx={{ fontSize: 12, fontWeight: 700, color: "#64748b" }}>필터 및 정렬</Typography>
+        {expandedSection === "filter" ? <ExpandLessIcon sx={{ fontSize: 16, color: "#94a3b8" }} /> : <ExpandMoreIcon sx={{ fontSize: 16, color: "#94a3b8" }} />}
+      </Box>
+      <Collapse in={expandedSection === "filter"} sx={{ mb: 3 }}>
+        <Box sx={{ border: "1px solid #e2e8f0", borderRadius: 1, p: 1.5 }}>
+          <Typography sx={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", mb: 0.5 }}>상태</Typography>
+          <RadioGroup value={filter} onChange={(_, value) => onFilterChange(value as ArticleFilter)} sx={{ mb: 2 }}>
+            <FormControlLabel value="all" control={<Radio size="small" />} label={<Typography sx={{ fontSize: 13 }}>모두</Typography>} />
+            <FormControlLabel value="read" control={<Radio size="small" />} label={<Typography sx={{ fontSize: 13 }}>열람</Typography>} />
+            <FormControlLabel value="unread" control={<Radio size="small" />} label={<Typography sx={{ fontSize: 13 }}>미열람</Typography>} />
+          </RadioGroup>
+          <Typography sx={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", mb: 0.5 }}>정렬</Typography>
+          <RadioGroup value={sort} onChange={(_, value) => onSortChange(value as ArticleSort)}>
+            <FormControlLabel value="latest" control={<Radio size="small" />} label={<Typography sx={{ fontSize: 13 }}>최신순</Typography>} />
+            <FormControlLabel value="oldest" control={<Radio size="small" />} label={<Typography sx={{ fontSize: 13 }}>오래된순</Typography>} />
+          </RadioGroup>
+        </Box>
+      </Collapse>
 
-        <Typography sx={{ fontSize: 12, fontWeight: 700, color: "#64748b", mb: 1 }}>카테고리</Typography>
-        <Autocomplete
-          freeSolo
-          disablePortal
-          options={categories}
-          value={category}
-          inputValue={category}
-          open={openSelect === "category"}
-          onOpen={() => setOpenSelect("category")}
-          onClose={() => setOpenSelect(null)}
-          onInputChange={(_, value) => onCategoryChange(value)}
-          onChange={(_, value) => onCategoryChange(typeof value === "string" ? value : "")}
-          ListboxProps={{
-            sx: {
-              maxHeight: 220,
-              overflowY: "auto"
-            }
-          }}
-          renderInput={(params) => <TextField {...params} fullWidth size="small" placeholder="카테고리를 선택하거나 직접 입력" />}
-          sx={{ mb: 3 }}
-        />
+      {/* 카테고리 아코디언 */}
+      <Box
+        onClick={() => toggleSection("category")}
+        sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer", mb: 1 }}
+      >
+        <Typography sx={{ fontSize: 12, fontWeight: 700, color: "#64748b" }}>카테고리</Typography>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+          {category && (
+            <Typography sx={{ fontSize: 11, color: "#3b82f6", fontWeight: 600 }}>{category}</Typography>
+          )}
+          {expandedSection === "category" ? <ExpandLessIcon sx={{ fontSize: 16, color: "#94a3b8" }} /> : <ExpandMoreIcon sx={{ fontSize: 16, color: "#94a3b8" }} />}
+        </Box>
+      </Box>
+      <Collapse in={expandedSection === "category"} sx={{ mb: 3 }}>
+        <Box sx={{ border: "1px solid #e2e8f0", borderRadius: 1, overflow: "hidden" }}>
+          {["", ...categories].map((cat) => (
+            <Box
+              key={cat || "__all__"}
+              onClick={() => { onCategoryChange(cat); setExpandedSection(null); }}
+              sx={{
+                px: 1.5, py: 1, cursor: "pointer", fontSize: 13,
+                bgcolor: category === cat ? "#eff6ff" : "transparent",
+                color: category === cat ? "#3b82f6" : "#1e293b",
+                fontWeight: category === cat ? 600 : 400,
+                "&:hover": { bgcolor: category === cat ? "#eff6ff" : "#f8fafc" },
+                borderBottom: "1px solid #f1f5f9",
+                "&:last-child": { borderBottom: "none" }
+              }}
+            >
+              {cat || "모두"}
+            </Box>
+          ))}
+        </Box>
+      </Collapse>
 
-        <Typography sx={{ fontSize: 12, fontWeight: 700, color: "#64748b", mb: 1 }}>도메인</Typography>
-        <Autocomplete
-          freeSolo
-          disablePortal
-          options={domains}
-          value={domain}
-          inputValue={domain}
-          open={openSelect === "domain"}
-          onOpen={() => setOpenSelect("domain")}
-          onClose={() => setOpenSelect(null)}
-          onInputChange={(_, value) => onDomainChange(value)}
-          onChange={(_, value) => onDomainChange(typeof value === "string" ? value : "")}
-          ListboxProps={{
-            sx: {
-              maxHeight: 220,
-              overflowY: "auto"
-            }
-          }}
-          renderInput={(params) => <TextField {...params} fullWidth size="small" placeholder="도메인을 선택하거나 직접 입력" />}
-          sx={{ mb: 3 }}
-        />
-      </>
-    ),
-    [category, categories, domain, domains, filter, onCategoryChange, onDomainChange, onFilterChange, onSortChange, openSelect, sort]
+      {/* 도메인 아코디언 */}
+      <Box
+        onClick={() => toggleSection("domain")}
+        sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer", mb: 1 }}
+      >
+        <Typography sx={{ fontSize: 12, fontWeight: 700, color: "#64748b" }}>도메인</Typography>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+          {domain && (
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+              <Box component="img" src={`https://www.google.com/s2/favicons?domain=${domain}&sz=16`} sx={{ width: 14, height: 14 }} />
+              <Typography sx={{ fontSize: 11, color: "#3b82f6", fontWeight: 600 }}>{domain}</Typography>
+            </Box>
+          )}
+          {expandedSection === "domain" ? <ExpandLessIcon sx={{ fontSize: 16, color: "#94a3b8" }} /> : <ExpandMoreIcon sx={{ fontSize: 16, color: "#94a3b8" }} />}
+        </Box>
+      </Box>
+      <Collapse in={expandedSection === "domain"} sx={{ mb: 3 }}>
+        <Box sx={{ border: "1px solid #e2e8f0", borderRadius: 1, overflow: "hidden" }}>
+          {["", ...domains].map((d) => (
+            <Box
+              key={d || "__all__"}
+              onClick={() => { onDomainChange(d); setExpandedSection(null); }}
+              sx={{
+                px: 1.5, py: 1, cursor: "pointer", fontSize: 13,
+                display: "flex", alignItems: "center", gap: 1,
+                bgcolor: domain === d ? "#eff6ff" : "transparent",
+                color: domain === d ? "#3b82f6" : "#1e293b",
+                fontWeight: domain === d ? 600 : 400,
+                "&:hover": { bgcolor: domain === d ? "#eff6ff" : "#f8fafc" },
+                borderBottom: "1px solid #f1f5f9",
+                "&:last-child": { borderBottom: "none" }
+              }}
+            >
+              {d ? (
+                <>
+                  <Box component="img" src={`https://www.google.com/s2/favicons?domain=${d}&sz=16`} sx={{ width: 16, height: 16, flexShrink: 0 }} />
+                  {d}
+                </>
+              ) : "모두"}
+            </Box>
+          ))}
+        </Box>
+      </Collapse>
+    </>
   );
 
   return (
@@ -144,12 +185,6 @@ export function SidebarFilters({
             p: 3
           }}
         >
-          <Toolbar sx={{ minHeight: "0 !important", p: 0, mb: 2, display: "flex", justifyContent: "space-between" }}>
-            <Typography sx={{ fontSize: 16, fontWeight: 700 }}>필터 및 정렬</Typography>
-            <IconButton aria-label="필터 닫기" onClick={onClose}>
-              <CloseIcon />
-            </IconButton>
-          </Toolbar>
           {panelBody}
         </Box>
       ) : null}
@@ -171,9 +206,6 @@ export function SidebarFilters({
         }}
       >
         <Box sx={{ height: "100%", overflowY: "auto", p: 3 }}>
-          <Toolbar sx={{ minHeight: "0 !important", p: 0, mb: 2 }}>
-            <Typography sx={{ fontSize: 16, fontWeight: 700 }}>필터 및 정렬</Typography>
-          </Toolbar>
           {panelBody}
         </Box>
       </Box>
