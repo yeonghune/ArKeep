@@ -166,11 +166,11 @@ export default function HomePage() {
             onDomainChange={filterState.setSelectedDomain}
           />
 
-          <Box component="main" sx={{ flex: 1, px: { xs: 2, sm: 3, lg: 4 }, py: 3 }}>
-            <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
+          <Box component="main" sx={{ flex: 1, px: { xs: 2, sm: 3, lg: 4 }, pt: 1, pb: 3 }}>
+            <Stack direction="row" justifyContent="space-between" alignItems="center" flexWrap="wrap" rowGap={1} sx={{ mb: 3 }}>
               <Stack direction="row" spacing={1} alignItems="baseline">
-                <Typography sx={{ fontSize: 18, fontWeight: 700 }}>저장한 아티클</Typography>
-                <Typography sx={{ fontSize: 14, fontWeight: 400, color: "#64748b" }}>
+                <Typography sx={{ fontSize: 18, fontWeight: 700, whiteSpace: "nowrap" }}>저장한 아티클</Typography>
+                <Typography sx={{ fontSize: 14, fontWeight: 400, color: "#64748b", whiteSpace: "nowrap" }}>
                   {articleState.totalItems}개 항목
                 </Typography>
                 {articleState.isRefreshing ? (
