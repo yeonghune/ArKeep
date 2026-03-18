@@ -19,7 +19,7 @@ import Toolbar from "@mui/material/Toolbar";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { useEffect, useMemo, useState, type MouseEvent } from "react";
-import { HEADER_HEIGHT, SYNC_BANNER_HEIGHT } from "../../home-constants";
+import { HEADER_HEIGHT, SYNC_BANNER_HEIGHT } from "@/constants/layout";
 
 type Props = {
   onMenuClick: () => void;

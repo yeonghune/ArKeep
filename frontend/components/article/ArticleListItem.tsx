@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { memo, useMemo, useState } from "react";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import DriveFileRenameOutlineIcon from "@mui/icons-material/DriveFileRenameOutline";
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
@@ -10,10 +10,10 @@ import MenuItem from "@mui/material/MenuItem";
 import Stack from "@mui/material/Stack";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
-import { formatRelativeTime, getCategoryColor, getCategoryLabel } from "../../home-data";
-import type { ArticleCard } from "../../home-types";
+import { formatRelativeTime, getCategoryColor, getCategoryLabel } from "@/lib/utils";
+import type { ArticleCard } from "@/types";
 import { CardSource } from "./CardSource";
-import { CategoryEditDialog } from "./CategoryEditDialog";
+import { CategoryEditDialog } from "@/components/dialogs/CategoryEditDialog";
 
 const PLACEHOLDER_SRC = "/thumbnail-placeholder.svg";
 
@@ -26,7 +26,7 @@ type Props = {
   onClick: () => void;
 };
 
-export function ArticleListItem({ card, categories, isBusy = false, onDelete, onUpdateCategory, onClick }: Props) {
+export const ArticleListItem = memo(function ArticleListItem({ card, categories, isBusy = false, onDelete, onUpdateCategory, onClick }: Props) {
   const [menuAnchorEl, setMenuAnchorEl] = useState<HTMLElement | null>(null);
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
   const [imgSrc, setImgSrc] = useState(card.thumbnailUrl ?? PLACEHOLDER_SRC);
@@ -183,4 +183,4 @@ export function ArticleListItem({ card, categories, isBusy = false, onDelete, on
       />
     </>
   );
-}
+});

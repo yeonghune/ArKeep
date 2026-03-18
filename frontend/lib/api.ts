@@ -43,6 +43,28 @@ export class ApiRequestError extends Error {
 
 let refreshPromise: Promise<void> | null = null;
 let bootstrapRefreshAttempted = false;
+let _bootstrapPromise: Promise<void> | null = null;
+
+/**
+ * 앱 시작 시 쿠키로 세션을 복원하는 bootstrap을 단 한 번 실행하고,
+ * 완료될 때까지 대기할 수 있는 Promise를 반환합니다.
+ * 이미 토큰이 있으면 즉시 resolve됩니다.
+ */
+export function getBootstrapPromise(): Promise<void> {
+  if (_bootstrapPromise) return _bootstrapPromise;
+  if (getStoredSession()?.token) return Promise.resolve();
+
+  _bootstrapPromise = (async () => {
+    bootstrapRefreshAttempted = true;
+    try {
+      await refreshAccessToken();
+    } catch {
+      // 쿠키 없음 → 게스트 모드 확정
+    }
+  })();
+
+  return _bootstrapPromise;
+}
 
 async function refreshAccessToken(): Promise<void> {
   if (refreshPromise) {

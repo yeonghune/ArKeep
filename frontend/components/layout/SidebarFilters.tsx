@@ -1,4 +1,4 @@
-﻿import CloseIcon from "@mui/icons-material/Close";
+import CloseIcon from "@mui/icons-material/Close";
 import Autocomplete from "@mui/material/Autocomplete";
 import Box from "@mui/material/Box";
 import FormControlLabel from "@mui/material/FormControlLabel";
@@ -11,8 +11,8 @@ import Typography from "@mui/material/Typography";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { useTheme } from "@mui/material/styles";
 import { useEffect, useMemo, useState } from "react";
-import { DRAWER_WIDTH } from "../../home-constants";
-import type { ArticleFilter, ArticleSort } from "../../home-types";
+import { DRAWER_WIDTH } from "@/constants/layout";
+import type { ArticleFilter, ArticleSort } from "@/types";
 
 type Props = {
   open: boolean;
@@ -128,7 +128,7 @@ export function SidebarFilters({
 
   return (
     <>
-      {open && (
+      {open ? (
         <Box
           component="aside"
           sx={{
@@ -152,7 +152,7 @@ export function SidebarFilters({
           </Toolbar>
           {panelBody}
         </Box>
-      )}
+      ) : null}
 
       <Box
         component="aside"

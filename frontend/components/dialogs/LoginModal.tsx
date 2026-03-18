@@ -188,11 +188,11 @@ export function LoginModal({ open, onClose, onGoogleCredential }: Props) {
             ArKeep에서 이어서 관리하세요.
           </Typography>
 
-          {errorMessage && (
+          {errorMessage ? (
             <Alert severity="error" sx={{ mb: 2 }}>
               {errorMessage}
             </Alert>
-          )}
+          ) : null}
 
           <Box
             ref={buttonContainerRef}
