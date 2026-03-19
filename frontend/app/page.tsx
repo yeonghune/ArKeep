@@ -3,11 +3,8 @@
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import AddIcon from "@mui/icons-material/Add";
-import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
-import DoneAllIcon from "@mui/icons-material/DoneAll";
-import FilterListIcon from "@mui/icons-material/FilterList";
 import GridViewIcon from "@mui/icons-material/GridView";
-import RadioButtonUncheckedIcon from "@mui/icons-material/RadioButtonUnchecked";
+import SortIcon from "@mui/icons-material/Sort";
 import ViewListIcon from "@mui/icons-material/ViewList";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
@@ -27,7 +24,7 @@ import { HOME_THEME } from "@/constants/theme";
 import { CONTENT_GAP, DRAWER_WIDTH, HEADER_HEIGHT, SYNC_BANNER_HEIGHT } from "@/constants/layout";
 import { ArticleCardItem } from "@/components/article/ArticleCardItem";
 import { ArticleListItem } from "@/components/article/ArticleListItem";
-import { SidebarFilters } from "@/components/layout/SidebarFilters";
+import { SidebarFilters, FILTER_ITEMS } from "@/components/layout/SidebarFilters";
 import { SyncBanner } from "@/components/layout/SyncBanner";
 import { TopNavigation } from "@/components/layout/TopNavigation";
 import { useArticleFilter } from "@/hooks/useArticleFilter";
@@ -62,8 +59,7 @@ export default function HomePage() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isOnboardingDismissed, setIsOnboardingDismissed] = useState(false);
   const [viewMenuAnchor, setViewMenuAnchor] = useState<HTMLElement | null>(null);
-  const [filterMenuAnchor, setFilterMenuAnchor] = useState<HTMLElement | null>(null);
-
+  const [sortMenuAnchor, setSortMenuAnchor] = useState<HTMLElement | null>(null);
   const [viewMode, setViewMode] = useViewMode();
   const filterState = useArticleFilter();
   const articleState = useArticles({ ...filterState });
@@ -163,20 +159,26 @@ export default function HomePage() {
           <SidebarFilters
             open={isSidebarOpen}
             filter={filterState.filter}
-            sort={filterState.sort}
             category={filterState.selectedCategory}
             categories={articleState.facets.categories}
             topOffset={sidebarTopOffset}
             onClose={() => setIsSidebarOpen(false)}
             onFilterChange={filterState.setFilter}
-            onSortChange={filterState.setSort}
             onCategoryChange={filterState.setSelectedCategory}
           />
 
           <Box component="main" sx={{ flex: 1, px: { xs: 2, sm: 3, lg: 4 }, pt: 1, pb: 3 }}>
             <Stack direction="row" justifyContent="space-between" alignItems="center" flexWrap="wrap" rowGap={1} sx={{ mb: 3 }}>
-              <Stack direction="row" spacing={1} alignItems="baseline">
-                <Typography sx={{ fontSize: 18, fontWeight: 700, whiteSpace: "nowrap" }}>모든 아티클</Typography>
+              <Stack direction="row" spacing={1} alignItems="center">
+                {(() => {
+                  const current = FILTER_ITEMS.find((f) => f.value === filterState.filter);
+                  return (
+                    <>
+                      <Box sx={{ display: "flex", color: "#64748b" }}>{current?.icon}</Box>
+                      <Typography sx={{ fontSize: 18, fontWeight: 700, whiteSpace: "nowrap" }}>{current?.label}</Typography>
+                    </>
+                  );
+                })()}
                 <Typography sx={{ fontSize: 14, fontWeight: 400, color: "#64748b", whiteSpace: "nowrap" }}>
                   {articleState.totalItems}개 항목
                 </Typography>
@@ -186,6 +188,17 @@ export default function HomePage() {
               </Stack>
 
               <Stack direction="row" spacing={0.5} alignItems="center">
+                <IconButton size="small" onClick={(e) => setSortMenuAnchor(e.currentTarget)} sx={{ color: "#64748b" }}>
+                  <SortIcon fontSize="small" />
+                </IconButton>
+                <Menu anchorEl={sortMenuAnchor} open={Boolean(sortMenuAnchor)} onClose={() => setSortMenuAnchor(null)}>
+                  <MenuItem selected={filterState.sort === "latest"} onClick={() => { filterState.setSort("latest"); setSortMenuAnchor(null); }} sx={{ fontSize: 13 }}>
+                    최신순
+                  </MenuItem>
+                  <MenuItem selected={filterState.sort === "oldest"} onClick={() => { filterState.setSort("oldest"); setSortMenuAnchor(null); }} sx={{ fontSize: 13 }}>
+                    오래된순
+                  </MenuItem>
+                </Menu>
                 <IconButton size="small" onClick={(e) => setViewMenuAnchor(e.currentTarget)}>
                   {viewMode === "card" ? <GridViewIcon fontSize="small" /> : <ViewListIcon fontSize="small" />}
                 </IconButton>
@@ -197,23 +210,6 @@ export default function HomePage() {
                   <MenuItem selected={viewMode === "list"} onClick={() => { setViewMode("list"); setViewMenuAnchor(null); }} sx={{ fontSize: 13 }}>
                     <ListItemIcon><ViewListIcon sx={{ fontSize: 16 }} /></ListItemIcon>
                     리스트형
-                  </MenuItem>
-                </Menu>
-                <IconButton size="small" sx={{ display: { lg: "none" } }} onClick={(e) => setFilterMenuAnchor(e.currentTarget)}>
-                  <FilterListIcon fontSize="small" />
-                </IconButton>
-                <Menu anchorEl={filterMenuAnchor} open={Boolean(filterMenuAnchor)} onClose={() => setFilterMenuAnchor(null)}>
-                  <MenuItem selected={filterState.filter === "all"} onClick={() => { filterState.setFilter("all"); setFilterMenuAnchor(null); }} sx={{ fontSize: 13 }}>
-                    <ListItemIcon><DoneAllIcon sx={{ fontSize: 16 }} /></ListItemIcon>
-                    모두
-                  </MenuItem>
-                  <MenuItem selected={filterState.filter === "read"} onClick={() => { filterState.setFilter("read"); setFilterMenuAnchor(null); }} sx={{ fontSize: 13 }}>
-                    <ListItemIcon><CheckCircleOutlineIcon sx={{ fontSize: 16 }} /></ListItemIcon>
-                    열람
-                  </MenuItem>
-                  <MenuItem selected={filterState.filter === "unread"} onClick={() => { filterState.setFilter("unread"); setFilterMenuAnchor(null); }} sx={{ fontSize: 13 }}>
-                    <ListItemIcon><RadioButtonUncheckedIcon sx={{ fontSize: 16 }} /></ListItemIcon>
-                    미열람
                   </MenuItem>
                 </Menu>
               </Stack>
