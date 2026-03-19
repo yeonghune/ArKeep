@@ -1,143 +1,188 @@
-import ExpandLessIcon from "@mui/icons-material/ExpandLess";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import AddIcon from "@mui/icons-material/Add";
+import LibraryBooksIcon from "@mui/icons-material/LibraryBooks";
+import MarkAsUnreadIcon from "@mui/icons-material/MarkAsUnread";
+import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
+import VisibilityIcon from "@mui/icons-material/Visibility";
 import Box from "@mui/material/Box";
-import Collapse from "@mui/material/Collapse";
-import FormControlLabel from "@mui/material/FormControlLabel";
-import Radio from "@mui/material/Radio";
-import RadioGroup from "@mui/material/RadioGroup";
+import Divider from "@mui/material/Divider";
+import IconButton from "@mui/material/IconButton";
 import Typography from "@mui/material/Typography";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { useTheme } from "@mui/material/styles";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { DRAWER_WIDTH } from "@/constants/layout";
-import type { ArticleFilter, ArticleSort } from "@/types";
+import type { ArticleFilter } from "@/types";
 
 type Props = {
   open: boolean;
   filter: ArticleFilter;
-  sort: ArticleSort;
   category: string;
   categories: string[];
   topOffset: number;
   onClose: () => void;
   onFilterChange: (value: ArticleFilter) => void;
-  onSortChange: (value: ArticleSort) => void;
   onCategoryChange: (value: string) => void;
 };
+
+const SELECTED_BG = "#F8FAFC";
+const SELECTED_COLOR = "#137fec";
+
+export const FILTER_ITEMS: { value: ArticleFilter; label: string; icon: React.ReactNode }[] = [
+  { value: "all", label: "모든 아티클", icon: <LibraryBooksIcon sx={{ fontSize: 16 }} /> },
+  { value: "read", label: "열람 아티클", icon: <VisibilityIcon sx={{ fontSize: 16 }} /> },
+  { value: "unread", label: "미열람 아티클", icon: <MarkAsUnreadIcon sx={{ fontSize: 16 }} /> },
+];
 
 export function SidebarFilters({
   open,
   filter,
-  sort,
   category,
   categories,
   topOffset,
   onClose: _onClose,
   onFilterChange,
-  onSortChange,
   onCategoryChange,
 }: Props) {
-  const [expandedSection, setExpandedSection] = useState<"filter" | "category" | null>("filter");
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("lg"));
 
   useEffect(() => {
     if (!(isMobile && open)) return;
-    const previousOverflow = document.body.style.overflow;
+    const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = previousOverflow;
-    };
+    return () => { document.body.style.overflow = prev; };
   }, [isMobile, open]);
 
-  const toggleSection = (section: "filter" | "category") => {
-    setExpandedSection((prev) => (prev === section ? null : section));
-  };
-
   const panelBody = (
-    <>
-      {/* 필터 및 정렬 아코디언 */}
-      <Box
-        onClick={() => toggleSection("filter")}
-        sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer", mb: 1 }}
-      >
-        <Typography sx={{ fontSize: 12, fontWeight: 700, color: "#64748b" }}>필터 및 정렬</Typography>
-        {expandedSection === "filter" ? <ExpandLessIcon sx={{ fontSize: 16, color: "#94a3b8" }} /> : <ExpandMoreIcon sx={{ fontSize: 16, color: "#94a3b8" }} />}
-      </Box>
-      <Collapse in={expandedSection === "filter"} sx={{ mb: 3 }}>
-        <Box sx={{ border: "1px solid #e2e8f0", borderRadius: 1, p: 1.5 }}>
-          <Typography sx={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", mb: 0.5 }}>상태</Typography>
-          <RadioGroup value={filter} onChange={(_, value) => onFilterChange(value as ArticleFilter)} sx={{ mb: 2 }}>
-            <FormControlLabel value="all" control={<Radio size="small" />} label={<Typography sx={{ fontSize: 13 }}>모두</Typography>} />
-            <FormControlLabel value="read" control={<Radio size="small" />} label={<Typography sx={{ fontSize: 13 }}>열람</Typography>} />
-            <FormControlLabel value="unread" control={<Radio size="small" />} label={<Typography sx={{ fontSize: 13 }}>미열람</Typography>} />
-          </RadioGroup>
-          <Typography sx={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", mb: 0.5 }}>정렬</Typography>
-          <RadioGroup value={sort} onChange={(_, value) => onSortChange(value as ArticleSort)}>
-            <FormControlLabel value="latest" control={<Radio size="small" />} label={<Typography sx={{ fontSize: 13 }}>최신순</Typography>} />
-            <FormControlLabel value="oldest" control={<Radio size="small" />} label={<Typography sx={{ fontSize: 13 }}>오래된순</Typography>} />
-          </RadioGroup>
-        </Box>
-      </Collapse>
+    <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
 
-      {/* 카테고리 아코디언 */}
-      <Box
-        onClick={() => toggleSection("category")}
-        sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer", mb: 1 }}
-      >
-        <Typography sx={{ fontSize: 12, fontWeight: 700, color: "#64748b" }}>카테고리</Typography>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-          {category && (
-            <Typography sx={{ fontSize: 11, color: "#3b82f6", fontWeight: 600 }}>{category}</Typography>
-          )}
-          {expandedSection === "category" ? <ExpandLessIcon sx={{ fontSize: 16, color: "#94a3b8" }} /> : <ExpandMoreIcon sx={{ fontSize: 16, color: "#94a3b8" }} />}
-        </Box>
+      {/* 필터 버튼 */}
+      {FILTER_ITEMS.map(({ value, label, icon }) => {
+        const isSelected = filter === value;
+        return (
+          <Box
+            key={value}
+            onClick={() => onFilterChange(value)}
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 1.25,
+              px: 1.5,
+              py: 0.875,
+              mb: 0.25,
+              borderRadius: 1,
+              cursor: "pointer",
+              fontSize: 13,
+              fontWeight: 700,
+              bgcolor: "transparent",
+              color: "#1e293b",
+              "&:hover": { bgcolor: SELECTED_BG },
+              transition: "background-color 120ms ease",
+            }}
+          >
+            <Box sx={{ display: "flex", color: "#64748b" }}>{icon}</Box>
+            {label}
+          </Box>
+        );
+      })}
+
+      <Divider sx={{ my: 1.5 }} />
+
+      {/* 카테고리 레이블 + 추가 버튼 */}
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", px: 1.5, mb: 1 }}>
+        <Typography sx={{ fontSize: 11, fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: 0.5 }}>
+          카테고리
+        </Typography>
+        <IconButton size="small" sx={{ p: 0.25, color: "#94a3b8", "&:hover": { bgcolor: SELECTED_BG, color: SELECTED_COLOR } }}>
+          <AddIcon sx={{ fontSize: 16 }} />
+        </IconButton>
       </Box>
-      <Collapse in={expandedSection === "category"} sx={{ mb: 3 }}>
-        <Box sx={{ border: "1px solid #e2e8f0", borderRadius: 1, overflow: "hidden" }}>
-          {["", ...categories].map((cat) => (
+
+      {/* 카테고리 목록 — 스크롤 가능 */}
+      <Box sx={{ flex: 1, overflowY: "auto" }}>
+        {["", ...categories].map((cat) => {
+          const isSelected = category === cat;
+          return (
             <Box
               key={cat || "__all__"}
-              onClick={() => { onCategoryChange(cat); setExpandedSection(null); }}
+              onClick={() => onCategoryChange(cat)}
               sx={{
-                px: 1.5, py: 1, cursor: "pointer", fontSize: 13,
-                bgcolor: category === cat ? "#eff6ff" : "transparent",
-                color: category === cat ? "#3b82f6" : "#1e293b",
-                fontWeight: category === cat ? 600 : 400,
-                "&:hover": { bgcolor: category === cat ? "#eff6ff" : "#f8fafc" },
-                borderBottom: "1px solid #f1f5f9",
-                "&:last-child": { borderBottom: "none" }
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                px: 1.5,
+                py: 0.875,
+                mb: 0.25,
+                borderRadius: 1,
+                cursor: "pointer",
+                fontSize: 13,
+                fontWeight: isSelected ? 700 : 600,
+                bgcolor: isSelected ? SELECTED_BG : "transparent",
+                color: isSelected ? SELECTED_COLOR : "#1e293b",
+                "&:hover": {
+                  bgcolor: SELECTED_BG,
+                  "& .more-btn": { opacity: 1 },
+                },
+                transition: "background-color 120ms ease",
               }}
             >
-              {cat || "모두"}
+              <span>{cat || "모든 카테고리"}</span>
+              <IconButton
+                size="small"
+                className="more-btn"
+                onClick={(e) => e.stopPropagation()}
+                sx={{
+                  opacity: 0,
+                  transition: "opacity 120ms ease",
+                  p: 0.25,
+                  color: "#64748b",
+                  "&:hover": { bgcolor: "transparent" },
+                }}
+              >
+                <MoreHorizIcon sx={{ fontSize: 16 }} />
+              </IconButton>
             </Box>
-          ))}
-        </Box>
-      </Collapse>
-
-    </>
+          );
+        })}
+      </Box>
+    </Box>
   );
 
   return (
     <>
       {open ? (
-        <Box
-          component="aside"
-          sx={{
-            display: { xs: "block", lg: "none" },
-            position: "fixed",
-            left: 0,
-            right: 0,
-            top: `${topOffset}px`,
-            bottom: 0,
-            bgcolor: "#fff",
-            zIndex: (muiTheme) => muiTheme.zIndex.appBar - 1,
-            overflowY: "auto",
-            p: 3
-          }}
-        >
-          {panelBody}
-        </Box>
+        <>
+          {/* 배경 오버레이 */}
+          <Box
+            onClick={_onClose}
+            sx={{
+              display: { xs: "block", lg: "none" },
+              position: "fixed",
+              inset: 0,
+              top: `${topOffset}px`,
+              bgcolor: "rgba(0,0,0,0.3)",
+              zIndex: (muiTheme) => muiTheme.zIndex.appBar - 2,
+            }}
+          />
+          {/* 드로어 */}
+          <Box
+            component="aside"
+            sx={{
+              display: { xs: "block", lg: "none" },
+              position: "fixed",
+              left: 0,
+              top: `${topOffset}px`,
+              bottom: 0,
+              width: DRAWER_WIDTH,
+              bgcolor: "#fff",
+              zIndex: (muiTheme) => muiTheme.zIndex.appBar - 1,
+              boxShadow: "4px 0 16px rgba(0,0,0,0.12)",
+              p: 2,
+            }}
+          >
+            {panelBody}
+          </Box>
+        </>
       ) : null}
 
       <Box
@@ -153,12 +198,11 @@ export function SidebarFilters({
           borderRight: "1px solid #e2e8f0",
           transform: open ? "translateX(0)" : "translateX(-100%)",
           transition: "transform 180ms ease",
-          pointerEvents: open ? "auto" : "none"
+          pointerEvents: open ? "auto" : "none",
+          p: 2,
         }}
       >
-        <Box sx={{ height: "100%", overflowY: "auto", p: 3 }}>
-          {panelBody}
-        </Box>
+        {panelBody}
       </Box>
     </>
   );
