@@ -86,7 +86,7 @@ async function refreshAccessToken(): Promise<void> {
     const current = getStoredSession();
     saveSession({
       token: payload.token,
-      email: payload.email,
+      email: current?.email || payload.email,
       name: current?.name,
       pictureUrl: current?.pictureUrl
     });

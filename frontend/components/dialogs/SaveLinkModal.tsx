@@ -11,10 +11,12 @@ import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 
+import type { Category } from "@/lib/categories";
+
 type Props = {
   open: boolean;
   onClose: () => void;
-  categories: string[];
+  categories: Category[];
   onSave: (url: string, category?: string | null, description?: string | null) => Promise<void>;
 };
 
@@ -22,7 +24,6 @@ const URL_PATTERN = /^https?:\/\/.+/i;
 
 export function SaveLinkModal({ open, onClose, categories, onSave }: Props) {
   const [url, setUrl] = useState("");
-  const [categoryInput, setCategoryInput] = useState("");
   const [categoryValue, setCategoryValue] = useState<string | null>(null);
   const [memo, setMemo] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -31,7 +32,6 @@ export function SaveLinkModal({ open, onClose, categories, onSave }: Props) {
   useEffect(() => {
     if (!open) {
       setUrl("");
-      setCategoryInput("");
       setCategoryValue(null);
       setMemo("");
       setError(null);
@@ -46,7 +46,7 @@ export function SaveLinkModal({ open, onClose, categories, onSave }: Props) {
       return;
     }
 
-    const rawCategory = (categoryValue ?? categoryInput).trim();
+    const rawCategory = categoryValue?.trim() ?? "";
     const normalizedCategory = rawCategory.length > 0 ? rawCategory : null;
     const normalizedMemo = memo.trim().length > 0 ? memo.trim() : null;
 
@@ -107,20 +107,11 @@ export function SaveLinkModal({ open, onClose, categories, onSave }: Props) {
 
         <Typography sx={{ fontSize: 13, color: "#64748b", mb: 0.75 }}>카테고리 (선택)</Typography>
         <Autocomplete
-          freeSolo
-          options={categories}
+          options={categories.map((c) => c.name)}
           value={categoryValue}
-          inputValue={categoryInput}
-          onChange={(_, nextValue) => {
-            setCategoryValue(nextValue);
-            if (typeof nextValue === "string") {
-              setCategoryInput(nextValue);
-            }
-          }}
-          onInputChange={(_, nextInputValue) => {
-            setCategoryInput(nextInputValue);
-          }}
-          renderInput={(params) => <TextField {...params} placeholder="카테고리를 선택하거나 직접 입력" />}
+          onChange={(_, nextValue) => setCategoryValue(nextValue)}
+          noOptionsText="카테고리가 없습니다. 사이드바에서 먼저 추가해주세요."
+          renderInput={(params) => <TextField {...params} placeholder="카테고리 선택 (선택사항)" />}
           sx={{ mb: 2 }}
         />
 

@@ -34,7 +34,8 @@ export function getCategoryColor(category: string | null): string {
 }
 
 export function formatRelativeTime(dateInput: string): string {
-  const createdAt = new Date(dateInput).getTime();
+  const date = new Date(dateInput);
+  const createdAt = date.getTime();
   if (Number.isNaN(createdAt)) {
     return "";
   }
@@ -49,18 +50,26 @@ export function formatRelativeTime(dateInput: string): string {
   if (diffHour < 24) {
     return `${diffHour}시간 전`;
   }
-  const diffDay = Math.floor(diffHour / 24);
+
+  const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+
+  // 캘린더 기준 날짜 차이 계산
+  const today = new Date();
+  const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+  const dateMidnight = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+  const diffDay = Math.round((todayMidnight - dateMidnight) / 86400000);
+
   if (diffDay < 7) {
-    return `${diffDay}일 전`;
+    return `${diffDay}일 전 (${dateStr})`;
   }
   const diffWeek = Math.floor(diffDay / 7);
   if (diffWeek < 5) {
-    return `${diffWeek}주 전`;
+    return `${diffWeek}주 전 (${dateStr})`;
   }
   const diffMonth = Math.floor(diffDay / 30);
   if (diffMonth < 12) {
-    return `${diffMonth}개월 전`;
+    return `${diffMonth}개월 전 (${dateStr})`;
   }
   const diffYear = Math.floor(diffDay / 365);
-  return `${diffYear}년 전`;
+  return `${diffYear}년 전 (${dateStr})`;
 }

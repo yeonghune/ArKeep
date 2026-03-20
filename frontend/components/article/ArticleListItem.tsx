@@ -1,4 +1,4 @@
-import { memo, useMemo, useState } from "react";
+import { memo, useState } from "react";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import DriveFileRenameOutlineIcon from "@mui/icons-material/DriveFileRenameOutline";
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
@@ -11,6 +11,7 @@ import Stack from "@mui/material/Stack";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import { formatRelativeTime, getCategoryColor, getCategoryLabel } from "@/lib/utils";
+import type { Category } from "@/lib/categories";
 import type { ArticleCard } from "@/types";
 import { CardSource } from "./CardSource";
 import { CategoryEditDialog } from "@/components/dialogs/CategoryEditDialog";
@@ -19,7 +20,7 @@ const PLACEHOLDER_SRC = "/thumbnail-placeholder.svg";
 
 type Props = {
   card: ArticleCard;
-  categories: string[];
+  categories: Category[];
   isBusy?: boolean;
   onDelete: (card: ArticleCard) => Promise<void>;
   onUpdateCategory: (card: ArticleCard, category: string | null) => Promise<void>;
@@ -35,7 +36,7 @@ export const ArticleListItem = memo(function ArticleListItem({ card, categories,
   const categoryColor = getCategoryColor(card.category);
   const timeAgo = formatRelativeTime(card.createdAt);
   const isMenuOpen = Boolean(menuAnchorEl);
-  const availableCategories = useMemo(() => categories.filter((c) => c.trim().length > 0), [categories]);
+  const availableCategories = categories;
 
   const closeMenu = () => setMenuAnchorEl(null);
 
