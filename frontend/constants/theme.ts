@@ -6,7 +6,7 @@ export const HOME_THEME = createTheme({
     background: { default: "#f8fafc" }
   },
   typography: {
-    fontFamily: ["Inter", "Apple SD Gothic Neo", "Malgun Gothic", "Nanum Gothic", "Noto Sans KR", "sans-serif"].join(",")
+    fontFamily: 'ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", "Noto Sans Arabic", "Noto Sans Hebrew", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol"'
   },
-  shape: { borderRadius: 10 }
+  shape: { borderRadius: 4 }
 });
