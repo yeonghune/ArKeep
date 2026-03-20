@@ -25,7 +25,6 @@ class CategoryService:
         )
 
     async def create_category(self, user: User, body: CreateCategoryRequest) -> CategoryResponse:
-        # 중복 확인
         result = await self.db.execute(
             select(Category).where(Category.user_id == user.id, Category.name == body.name)
         )
@@ -50,7 +49,6 @@ class CategoryService:
         if category is None:
             raise AppException(404, "NOT_FOUND", "카테고리를 찾을 수 없습니다.")
 
-        # 중복 확인
         dup = await self.db.execute(
             select(Category).where(
                 Category.user_id == user.id,
@@ -61,6 +59,8 @@ class CategoryService:
         if dup.scalar_one_or_none():
             raise AppException(409, "CONFLICT", "이미 존재하는 카테고리입니다.")
 
+        # categories.name만 바꾸면 articles는 category_id FK로 연결되어 있으므로
+        # 자동으로 새 이름이 반영됨
         category.name = body.name
         await self.db.commit()
         await self.db.refresh(category)
@@ -73,6 +73,8 @@ class CategoryService:
         category = result.scalar_one_or_none()
         if category is None:
             raise AppException(404, "NOT_FOUND", "카테고리를 찾을 수 없습니다.")
+
+        # ON DELETE SET NULL이 articles.category_id를 자동으로 NULL 처리
         await self.db.execute(
             delete(Category).where(Category.id == category_id)
         )

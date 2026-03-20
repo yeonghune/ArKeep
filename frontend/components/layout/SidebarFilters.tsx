@@ -27,18 +27,15 @@ import type { ArticleFilter } from "@/types";
 
 const CAT_MAX_LENGTH = 15;
 const CAT_RESERVED = "모든 카테고리";
-const CAT_ALLOWED = /^[가-힣ㄱ-ㅎㅏ-ㅣ0-9 ]*$/;
-
-function filterCatInput(value: string): string {
-  return value.replace(/[^가-힣ㄱ-ㅎㅏ-ㅣ0-9 ]/g, "").slice(0, CAT_MAX_LENGTH);
-}
+const CAT_ALLOWED = /^[가-힣ㄱ-ㅎㅏ-ㅣa-zA-Z0-9 ]*$/;
+const CAT_INVALID_MSG = "한글, 영어, 숫자, 띄어쓰기만 허용됩니다.";
 
 function validateCatName(name: string): string {
   const normalized = name.replace(/ {2,}/g, " ").trim();
   if (!normalized) return "";
   if (normalized === CAT_RESERVED) return `"${CAT_RESERVED}"는 예약어입니다.`;
   if (normalized.length > CAT_MAX_LENGTH) return `${CAT_MAX_LENGTH}자를 초과할 수 없습니다.`;
-  if (!CAT_ALLOWED.test(normalized)) return "한글, 숫자, 띄어쓰기만 사용할 수 있습니다.";
+  if (!CAT_ALLOWED.test(normalized)) return CAT_INVALID_MSG;
   return "";
 }
 
@@ -203,7 +200,7 @@ export function SidebarFilters({
       </Box>
 
       {/* 로그아웃 드롭다운 */}
-      <Menu anchorEl={menuAnchor} open={Boolean(menuAnchor)} onClose={() => setMenuAnchor(null)}>
+      <Menu anchorEl={menuAnchor} open={Boolean(menuAnchor)} onClose={() => setMenuAnchor(null)} PaperProps={{ elevation: 0, sx: { boxShadow: "0 2px 8px rgba(0,0,0,0.08)", border: "1px solid #e2e8f0", borderRadius: 1.5 } }}>
         <MenuItem disabled>
           <ListItemText primary={userEmail ?? userName ?? "사용자"} primaryTypographyProps={{ fontSize: 13 }} />
         </MenuItem>
@@ -263,7 +260,16 @@ export function SidebarFilters({
                 autoFocus
                 disabled={isAdding}
                 value={newCatName}
-                onChange={(e) => { setNewCatName(filterCatInput(e.target.value)); setAddError(""); }}
+                inputMode="text"
+                enterKeyHint="done"
+                onChange={(e) => {
+                  const raw = e.target.value;
+                  const val = raw.slice(0, CAT_MAX_LENGTH);
+                  setNewCatName(val);
+                  if (raw.length > CAT_MAX_LENGTH) setAddError(`${CAT_MAX_LENGTH}자를 넘을 수 없습니다.`);
+                  else if (val && !CAT_ALLOWED.test(val)) setAddError(CAT_INVALID_MSG);
+                  else setAddError("");
+                }}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") void handleAddCategory();
                   if (e.key === "Escape") { setIsAddingInline(false); setNewCatName(""); setAddError(""); }
@@ -276,9 +282,6 @@ export function SidebarFilters({
                   "&::placeholder": { color: "#94a3b8" },
                 }}
               />
-              <Box sx={{ fontSize: 11, color: newCatName.length >= CAT_MAX_LENGTH ? "#ef4444" : "#94a3b8", flexShrink: 0 }}>
-                {newCatName.length}/{CAT_MAX_LENGTH}
-              </Box>
             </Box>
             {addError && (
               <Box sx={{ px: 1, pb: 0.5, fontSize: 11, color: "#ef4444" }}>{addError}</Box>
@@ -312,7 +315,16 @@ export function SidebarFilters({
                     component="input"
                     autoFocus
                     value={renameCatName}
-                    onChange={(e) => { setRenameCatName(filterCatInput(e.target.value)); setRenameError(""); }}
+                    inputMode="text"
+                    enterKeyHint="done"
+                    onChange={(e) => {
+                      const raw = e.target.value;
+                      const val = raw.slice(0, CAT_MAX_LENGTH);
+                      setRenameCatName(val);
+                      if (raw.length > CAT_MAX_LENGTH) setRenameError(`${CAT_MAX_LENGTH}자를 넘을 수 없습니다.`);
+                      else if (val && !CAT_ALLOWED.test(val)) setRenameError(CAT_INVALID_MSG);
+                      else setRenameError("");
+                    }}
                     onKeyDown={(e) => {
                       if (e.key === "Enter") void handleRenameCategory(cat.id);
                       if (e.key === "Escape") { setRenamingCatId(null); setRenameError(""); }
@@ -323,9 +335,6 @@ export function SidebarFilters({
                       fontSize: 13, color: "#1e293b", fontFamily: "inherit",
                     }}
                   />
-                  <Box sx={{ fontSize: 11, color: renameCatName.length >= CAT_MAX_LENGTH ? "#ef4444" : "#94a3b8", flexShrink: 0 }}>
-                    {renameCatName.length}/{CAT_MAX_LENGTH}
-                  </Box>
                 </Box>
                 {renameError && (
                   <Box sx={{ px: 1, pb: 0.5, fontSize: 11, color: "#ef4444" }}>{renameError}</Box>
@@ -355,7 +364,7 @@ export function SidebarFilters({
                   e.stopPropagation();
                   setCatMenu({ catId: cat.id, anchor: e.currentTarget });
                 }}
-                sx={{ opacity: 0, transition: "opacity 120ms ease", p: 0.25, color: "#64748b", "&:hover": { bgcolor: "transparent" } }}
+                sx={{ opacity: isMobile ? 1 : 0, transition: "opacity 120ms ease", p: 0.25, color: "#64748b", "&:hover": { bgcolor: "transparent" } }}
               >
                 <MoreHorizIcon sx={{ fontSize: 16 }} />
               </IconButton>
@@ -363,6 +372,7 @@ export function SidebarFilters({
                 anchorEl={catMenu?.anchor}
                 open={catMenu?.catId === cat.id}
                 onClose={() => setCatMenu(null)}
+                PaperProps={{ elevation: 0, sx: { boxShadow: "0 2px 8px rgba(0,0,0,0.08)", border: "1px solid #e2e8f0", borderRadius: 1.5 } }}
               >
                 <MenuItem
                   onClick={() => {

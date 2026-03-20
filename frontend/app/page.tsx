@@ -261,7 +261,7 @@ export default function HomePage() {
                   <IconButton size="small" onClick={(e) => setSortMenuAnchor(e.currentTarget)} sx={{ color: "#64748b" }}>
                     <SortIcon fontSize="small" />
                   </IconButton>
-                  <Menu anchorEl={sortMenuAnchor} open={Boolean(sortMenuAnchor)} onClose={() => setSortMenuAnchor(null)}>
+                  <Menu anchorEl={sortMenuAnchor} open={Boolean(sortMenuAnchor)} onClose={() => setSortMenuAnchor(null)} PaperProps={{ elevation: 0, sx: { boxShadow: "0 2px 8px rgba(0,0,0,0.08)", border: "1px solid #e2e8f0", borderRadius: 1.5 } }}>
                     <MenuItem selected={filterState.sort === "latest"} onClick={() => { filterState.setSort("latest"); setSortMenuAnchor(null); }} sx={{ fontSize: 13 }}>
                       최신순
                     </MenuItem>
@@ -272,7 +272,7 @@ export default function HomePage() {
                   <IconButton size="small" onClick={(e) => setViewMenuAnchor(e.currentTarget)}>
                     {viewMode === "card" ? <GridViewIcon fontSize="small" /> : <ViewListIcon fontSize="small" />}
                   </IconButton>
-                  <Menu anchorEl={viewMenuAnchor} open={Boolean(viewMenuAnchor)} onClose={() => setViewMenuAnchor(null)}>
+                  <Menu anchorEl={viewMenuAnchor} open={Boolean(viewMenuAnchor)} onClose={() => setViewMenuAnchor(null)} PaperProps={{ elevation: 0, sx: { boxShadow: "0 2px 8px rgba(0,0,0,0.08)", border: "1px solid #e2e8f0", borderRadius: 1.5 } }}>
                     <MenuItem selected={viewMode === "card"} onClick={() => { setViewMode("card"); setViewMenuAnchor(null); }} sx={{ fontSize: 13 }}>
                       <ListItemIcon><GridViewIcon sx={{ fontSize: 16 }} /></ListItemIcon>
                       카드형
