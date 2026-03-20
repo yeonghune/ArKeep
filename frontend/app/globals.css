@@ -1,17 +1,12 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
-
 * {
   box-sizing: border-box;
 }
 
 body {
   margin: 0;
-  font-family: "Inter", "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif;
+  font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "Apple Color Emoji", "Noto Sans Arabic", "Noto Sans Hebrew", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol";
   color: #0f172a;
-  background:
-    radial-gradient(circle at 85% 10%, rgba(59, 130, 246, 0.09), transparent 35%),
-    radial-gradient(circle at 12% 20%, rgba(14, 165, 233, 0.08), transparent 30%),
-    #f8fafc;
+  background: #f8fafc;
 }
 
 ::-webkit-scrollbar {

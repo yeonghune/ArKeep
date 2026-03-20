@@ -1,6 +1,4 @@
-export const DRAWER_WIDTH = 280;
+export const DRAWER_WIDTH = 240;
 export const SYNC_BANNER_HEIGHT = 40;
-export const HEADER_HEIGHT = 64;
 export const CONTENT_GAP = 8;
-export const TOP_BAR_OFFSET = SYNC_BANNER_HEIGHT + HEADER_HEIGHT;
-export const CONTENT_TOP_OFFSET = TOP_BAR_OFFSET + CONTENT_GAP;
+export const TOP_BAR_HEIGHT = 50;

@@ -4,6 +4,8 @@ import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import AddIcon from "@mui/icons-material/Add";
 import GridViewIcon from "@mui/icons-material/GridView";
+import MenuIcon from "@mui/icons-material/Menu";
+import SearchIcon from "@mui/icons-material/Search";
 import SortIcon from "@mui/icons-material/Sort";
 import ViewListIcon from "@mui/icons-material/ViewList";
 import Alert from "@mui/material/Alert";
@@ -11,22 +13,23 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
 import CssBaseline from "@mui/material/CssBaseline";
-import Fab from "@mui/material/Fab";
 import IconButton from "@mui/material/IconButton";
+import InputAdornment from "@mui/material/InputAdornment";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
+import Divider from "@mui/material/Divider";
 import Pagination from "@mui/material/Pagination";
 import Stack from "@mui/material/Stack";
+import TextField from "@mui/material/TextField";
 import { ThemeProvider } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import { HOME_THEME } from "@/constants/theme";
-import { CONTENT_GAP, DRAWER_WIDTH, HEADER_HEIGHT, SYNC_BANNER_HEIGHT } from "@/constants/layout";
+import { CONTENT_GAP, DRAWER_WIDTH, SYNC_BANNER_HEIGHT, TOP_BAR_HEIGHT } from "@/constants/layout";
 import { ArticleCardItem } from "@/components/article/ArticleCardItem";
 import { ArticleListItem } from "@/components/article/ArticleListItem";
 import { SidebarFilters, FILTER_ITEMS } from "@/components/layout/SidebarFilters";
 import { SyncBanner } from "@/components/layout/SyncBanner";
-import { TopNavigation } from "@/components/layout/TopNavigation";
 import { useArticleFilter } from "@/hooks/useArticleFilter";
 import { useArticles } from "@/hooks/useArticles";
 import { useSession } from "@/hooks/useSession";
@@ -68,7 +71,7 @@ export default function HomePage() {
   const { showSyncBanner } = sessionState;
 
   const sidebarTopOffset = useMemo(
-    () => HEADER_HEIGHT + (showSyncBanner ? SYNC_BANNER_HEIGHT : 0),
+    () => showSyncBanner ? SYNC_BANNER_HEIGHT : 0,
     [showSyncBanner]
   );
   const contentTopOffset = useMemo(() => sidebarTopOffset + CONTENT_GAP, [sidebarTopOffset]);
@@ -82,7 +85,6 @@ export default function HomePage() {
     return () => mq.removeEventListener("change", sync);
   }, []);
 
-  // 인증 후 아티클 목록 갱신 콜백 (hook 간 브릿지)
   const afterAuthChange = useCallback(async () => {
     filterState.setPage(1);
     await articleState.refresh();
@@ -134,28 +136,19 @@ export default function HomePage() {
           />
         ) : null}
 
-        <TopNavigation
-          onMenuClick={() => setIsSidebarOpen((prev) => !prev)}
-          searchQuery={filterState.searchInput}
-          onSearchQueryChange={filterState.setSearchInput}
-          isLoggedIn={Boolean(sessionState.session)}
-          userName={sessionState.session?.name ?? sessionState.session?.email}
-          userAvatarUrl={sessionState.session?.pictureUrl}
-          onAvatarClickWhenLoggedOut={() => setIsLoginModalOpen(true)}
-          onLogout={() => sessionState.handleLogout(afterAuthChange)}
-          hasSyncBanner={showSyncBanner}
-        />
-
-        <Box sx={{ height: `${contentTopOffset}px` }} />
+        <Box sx={{ height: `${sidebarTopOffset}px` }} />
 
         <Box sx={{ display: "flex" }}>
+          {/* 사이드바 공간 확보 */}
           <Box
             sx={{
               display: { xs: "none", lg: "block" },
               width: isSidebarOpen ? DRAWER_WIDTH : 0,
               transition: "width 180ms ease",
+              flexShrink: 0,
             }}
           />
+
           <SidebarFilters
             open={isSidebarOpen}
             filter={filterState.filter}
@@ -165,146 +158,211 @@ export default function HomePage() {
             onClose={() => setIsSidebarOpen(false)}
             onFilterChange={filterState.setFilter}
             onCategoryChange={filterState.setSelectedCategory}
+            isLoggedIn={Boolean(sessionState.session)}
+            userName={sessionState.session?.name ?? sessionState.session?.email}
+            userAvatarUrl={sessionState.session?.pictureUrl}
+            onAvatarClickWhenLoggedOut={() => setIsLoginModalOpen(true)}
+            onLogout={() => sessionState.handleLogout(afterAuthChange)}
           />
 
-          <Box component="main" sx={{ flex: 1, px: { xs: 2, sm: 3, lg: 4 }, pt: 1, pb: 3 }}>
-            <Stack direction="row" justifyContent="space-between" alignItems="center" flexWrap="wrap" rowGap={1} sx={{ mb: 3 }}>
-              <Stack direction="row" spacing={1} alignItems="center">
-                {(() => {
-                  const current = FILTER_ITEMS.find((f) => f.value === filterState.filter);
-                  return (
-                    <>
-                      <Box sx={{ display: "flex", color: "#64748b" }}>{current?.icon}</Box>
-                      <Typography sx={{ fontSize: 18, fontWeight: 700, whiteSpace: "nowrap" }}>{current?.label}</Typography>
-                    </>
-                  );
-                })()}
-                <Typography sx={{ fontSize: 14, fontWeight: 400, color: "#64748b", whiteSpace: "nowrap" }}>
-                  {articleState.totalItems}개 항목
-                </Typography>
-                {articleState.isRefreshing ? (
-                  <Typography sx={{ fontSize: 12, color: "#64748b" }}>불러오는 중...</Typography>
-                ) : null}
+          <Box
+            component="main"
+            sx={{
+              flex: 1,
+              minWidth: 0,
+              bgcolor: "#ffffff",
+              minHeight: "100vh",
+            }}
+          >
+            {/* 상단 바 (sticky): 햄버거 + 검색 + 추가 */}
+            <Box
+              sx={{
+                position: "sticky",
+                top: `${sidebarTopOffset}px`,
+                zIndex: 10,
+                bgcolor: "#ffffff",
+                px: { xs: 2, sm: 3, lg: 4 },
+                height: `${TOP_BAR_HEIGHT}px`,
+                display: "flex",
+                alignItems: "center",
+                gap: 1.5,
+              }}
+            >
+              <IconButton
+                size="small"
+                onClick={() => setIsSidebarOpen((prev) => !prev)}
+                sx={{ color: "#64748b", flexShrink: 0, ml: "-5px" }}
+              >
+                <MenuIcon fontSize="small" />
+              </IconButton>
+
+              <TextField
+                size="small"
+                placeholder="검색"
+                value={filterState.searchInput}
+                onChange={(e) => filterState.setSearchInput(e.target.value)}
+                sx={{
+                  flex: { xs: 1, sm: "0 1 400px" },
+                  "& .MuiInputBase-root": { height: "30px", bgcolor: "#f8fafc" },
+                  "& .MuiInputBase-input": { py: "4px" },
+                }}
+                slotProps={{
+                  input: {
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <SearchIcon sx={{ fontSize: 16, color: "#94a3b8" }} />
+                      </InputAdornment>
+                    ),
+                  },
+                }}
+              />
+
+              <Box sx={{ flex: 1, display: { xs: "none", sm: "block" } }} />
+
+              <Button
+                variant="contained"
+                size="small"
+                startIcon={<AddIcon />}
+                onClick={() => setIsSaveModalOpen(true)}
+                sx={{ flexShrink: 0, fontWeight: 600, whiteSpace: "nowrap", mr: "-4px", boxShadow: "none" }}
+              >
+                추가
+              </Button>
+            </Box>
+
+            {/* 콘텐츠 영역 */}
+            <Box sx={{ px: { xs: 2, sm: 3, lg: 4 }, pt: `${contentTopOffset}px`, pb: 3 }}>
+              {/* 타이틀 바 */}
+              <Stack direction="row" justifyContent="space-between" alignItems="center" flexWrap="wrap" rowGap={1} sx={{ mb: 2 }}>
+                <Stack direction="row" spacing={1} alignItems="center">
+                  {(() => {
+                    const current = FILTER_ITEMS.find((f) => f.value === filterState.filter);
+                    return (
+                      <>
+                        <Box sx={{ display: "flex", color: "#64748b" }}>{current?.icon}</Box>
+                        <Typography sx={{ fontSize: 18, fontWeight: 700, whiteSpace: "nowrap" }}>{current?.label}</Typography>
+                      </>
+                    );
+                  })()}
+                  <Typography sx={{ fontSize: 14, fontWeight: 400, color: "#64748b", whiteSpace: "nowrap" }}>
+                    {articleState.totalItems}개 항목
+                  </Typography>
+                  {articleState.isRefreshing ? (
+                    <Typography sx={{ fontSize: 12, color: "#64748b" }}>불러오는 중...</Typography>
+                  ) : null}
+                </Stack>
+
+                <Stack direction="row" spacing={0.5} alignItems="center" sx={{ mr: "-5px" }}>
+                  <IconButton size="small" onClick={(e) => setSortMenuAnchor(e.currentTarget)} sx={{ color: "#64748b" }}>
+                    <SortIcon fontSize="small" />
+                  </IconButton>
+                  <Menu anchorEl={sortMenuAnchor} open={Boolean(sortMenuAnchor)} onClose={() => setSortMenuAnchor(null)}>
+                    <MenuItem selected={filterState.sort === "latest"} onClick={() => { filterState.setSort("latest"); setSortMenuAnchor(null); }} sx={{ fontSize: 13 }}>
+                      최신순
+                    </MenuItem>
+                    <MenuItem selected={filterState.sort === "oldest"} onClick={() => { filterState.setSort("oldest"); setSortMenuAnchor(null); }} sx={{ fontSize: 13 }}>
+                      오래된순
+                    </MenuItem>
+                  </Menu>
+                  <IconButton size="small" onClick={(e) => setViewMenuAnchor(e.currentTarget)}>
+                    {viewMode === "card" ? <GridViewIcon fontSize="small" /> : <ViewListIcon fontSize="small" />}
+                  </IconButton>
+                  <Menu anchorEl={viewMenuAnchor} open={Boolean(viewMenuAnchor)} onClose={() => setViewMenuAnchor(null)}>
+                    <MenuItem selected={viewMode === "card"} onClick={() => { setViewMode("card"); setViewMenuAnchor(null); }} sx={{ fontSize: 13 }}>
+                      <ListItemIcon><GridViewIcon sx={{ fontSize: 16 }} /></ListItemIcon>
+                      카드형
+                    </MenuItem>
+                    <MenuItem selected={viewMode === "list"} onClick={() => { setViewMode("list"); setViewMenuAnchor(null); }} sx={{ fontSize: 13 }}>
+                      <ListItemIcon><ViewListIcon sx={{ fontSize: 16 }} /></ListItemIcon>
+                      리스트형
+                    </MenuItem>
+                  </Menu>
+                </Stack>
               </Stack>
 
-              <Stack direction="row" spacing={0.5} alignItems="center">
-                <IconButton size="small" onClick={(e) => setSortMenuAnchor(e.currentTarget)} sx={{ color: "#64748b" }}>
-                  <SortIcon fontSize="small" />
-                </IconButton>
-                <Menu anchorEl={sortMenuAnchor} open={Boolean(sortMenuAnchor)} onClose={() => setSortMenuAnchor(null)}>
-                  <MenuItem selected={filterState.sort === "latest"} onClick={() => { filterState.setSort("latest"); setSortMenuAnchor(null); }} sx={{ fontSize: 13 }}>
-                    최신순
-                  </MenuItem>
-                  <MenuItem selected={filterState.sort === "oldest"} onClick={() => { filterState.setSort("oldest"); setSortMenuAnchor(null); }} sx={{ fontSize: 13 }}>
-                    오래된순
-                  </MenuItem>
-                </Menu>
-                <IconButton size="small" onClick={(e) => setViewMenuAnchor(e.currentTarget)}>
-                  {viewMode === "card" ? <GridViewIcon fontSize="small" /> : <ViewListIcon fontSize="small" />}
-                </IconButton>
-                <Menu anchorEl={viewMenuAnchor} open={Boolean(viewMenuAnchor)} onClose={() => setViewMenuAnchor(null)}>
-                  <MenuItem selected={viewMode === "card"} onClick={() => { setViewMode("card"); setViewMenuAnchor(null); }} sx={{ fontSize: 13 }}>
-                    <ListItemIcon><GridViewIcon sx={{ fontSize: 16 }} /></ListItemIcon>
-                    카드형
-                  </MenuItem>
-                  <MenuItem selected={viewMode === "list"} onClick={() => { setViewMode("list"); setViewMenuAnchor(null); }} sx={{ fontSize: 13 }}>
-                    <ListItemIcon><ViewListIcon sx={{ fontSize: 16 }} /></ListItemIcon>
-                    리스트형
-                  </MenuItem>
-                </Menu>
-              </Stack>
-            </Stack>
+              <Divider sx={{ mb: 3, mx: { xs: -2, sm: -3, lg: -4 } }} />
 
-            {combinedError ? (
-              <Alert severity="error" sx={{ mb: 2 }}>
-                {combinedError}
-              </Alert>
-            ) : null}
+              {combinedError ? (
+                <Alert severity="error" sx={{ mb: 2 }}>
+                  {combinedError}
+                </Alert>
+              ) : null}
 
-            {articleState.isLoading ? (
-              <Box sx={{ display: "grid", placeItems: "center", py: 12 }}>
-                <CircularProgress size={28} />
-              </Box>
-            ) : articleState.articles.length === 0 ? (
-              <Box sx={{ display: "grid", placeItems: "center", py: 12, gap: 2 }}>
-                <Typography
-                  sx={{ color: "#64748b", fontSize: { xs: 18, sm: 20 }, fontWeight: 600, textAlign: "center" }}
-                >
-                  {showCenteredAddCta ? emptyStateMessage : "현재 조건에 맞는 아티클이 없습니다."}
-                </Typography>
-                {showCenteredAddCta ? (
-                  <Button variant="contained" onClick={() => setIsSaveModalOpen(true)} startIcon={<AddIcon />}>
-                    추가
-                  </Button>
-                ) : null}
-              </Box>
-            ) : (
-              <Stack spacing={3}>
-                {viewMode === "card" ? (
-                  <Box
-                    sx={{
-                      display: "grid",
-                      gap: 3,
-                      gridTemplateColumns: {
-                        xs: "1fr",
-                        sm: "repeat(2, minmax(0, 1fr))",
-                        lg: "repeat(4, minmax(0, 1fr))",
-                      },
-                    }}
+              {articleState.isLoading ? (
+                <Box sx={{ display: "grid", placeItems: "center", py: 12 }}>
+                  <CircularProgress size={28} />
+                </Box>
+              ) : articleState.articles.length === 0 ? (
+                <Box sx={{ display: "grid", placeItems: "center", py: 12, gap: 2 }}>
+                  <Typography
+                    sx={{ color: "#64748b", fontSize: { xs: 18, sm: 20 }, fontWeight: 600, textAlign: "center" }}
                   >
-                    {articleState.articles.map((card) => (
-                      <ArticleCardItem
-                        key={card.id}
-                        card={card}
-                        categories={articleState.facets.categories}
-                        isBusy={articleState.mutatingArticleId === card.id}
-                        onDelete={articleState.handleDelete}
-                        onUpdateCategory={articleState.handleUpdateCategory}
-                        onClick={() => articleState.setSelectedCard(card)}
-                      />
-                    ))}
-                  </Box>
-                ) : (
-                  <Box sx={{ border: "1px solid #e2e8f0", borderRadius: 3, overflow: "hidden" }}>
-                    {articleState.articles.map((card) => (
-                      <ArticleListItem
-                        key={card.id}
-                        card={card}
-                        categories={articleState.facets.categories}
-                        isBusy={articleState.mutatingArticleId === card.id}
-                        onDelete={articleState.handleDelete}
-                        onUpdateCategory={articleState.handleUpdateCategory}
-                        onClick={() => articleState.setSelectedCard(card)}
-                      />
-                    ))}
-                  </Box>
-                )}
+                    {showCenteredAddCta ? emptyStateMessage : "현재 조건에 맞는 아티클이 없습니다."}
+                  </Typography>
+                  {showCenteredAddCta ? (
+                    <Button variant="contained" onClick={() => setIsSaveModalOpen(true)} startIcon={<AddIcon />}>
+                      추가
+                    </Button>
+                  ) : null}
+                </Box>
+              ) : (
+                <Stack spacing={3}>
+                  {viewMode === "card" ? (
+                    <Box
+                      sx={{
+                        display: "grid",
+                        gap: 3,
+                        gridTemplateColumns: {
+                          xs: "1fr",
+                          sm: "repeat(2, minmax(0, 1fr))",
+                          lg: "repeat(4, minmax(0, 1fr))",
+                        },
+                      }}
+                    >
+                      {articleState.articles.map((card) => (
+                        <ArticleCardItem
+                          key={card.id}
+                          card={card}
+                          categories={articleState.facets.categories}
+                          isBusy={articleState.mutatingArticleId === card.id}
+                          onDelete={articleState.handleDelete}
+                          onUpdateCategory={articleState.handleUpdateCategory}
+                          onClick={() => articleState.setSelectedCard(card)}
+                        />
+                      ))}
+                    </Box>
+                  ) : (
+                    <Box sx={{ border: "1px solid #e2e8f0", borderRadius: 3, overflow: "hidden" }}>
+                      {articleState.articles.map((card) => (
+                        <ArticleListItem
+                          key={card.id}
+                          card={card}
+                          categories={articleState.facets.categories}
+                          isBusy={articleState.mutatingArticleId === card.id}
+                          onDelete={articleState.handleDelete}
+                          onUpdateCategory={articleState.handleUpdateCategory}
+                          onClick={() => articleState.setSelectedCard(card)}
+                        />
+                      ))}
+                    </Box>
+                  )}
 
-                {articleState.totalPages > 1 ? (
-                  <Stack direction="row" justifyContent="center">
-                    <Pagination
-                      color="primary"
-                      shape="rounded"
-                      page={filterState.page}
-                      count={articleState.totalPages}
-                      onChange={(_, nextPage) => filterState.setPage(nextPage)}
-                    />
-                  </Stack>
-                ) : null}
-              </Stack>
-            )}
+                  {articleState.totalPages > 1 ? (
+                    <Stack direction="row" justifyContent="center">
+                      <Pagination
+                        color="primary"
+                        shape="rounded"
+                        page={filterState.page}
+                        count={articleState.totalPages}
+                        onChange={(_, nextPage) => filterState.setPage(nextPage)}
+                      />
+                    </Stack>
+                  ) : null}
+                </Stack>
+              )}
+            </Box>
           </Box>
         </Box>
-
-        {!showCenteredAddCta ? (
-          <Fab
-            color="primary"
-            sx={{ position: "fixed", right: 32, bottom: 32 }}
-            onClick={() => setIsSaveModalOpen(true)}
-          >
-            <AddIcon />
-          </Fab>
-        ) : null}
 
         <SaveLinkModal
           open={isSaveModalOpen}
