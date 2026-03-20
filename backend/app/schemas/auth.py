@@ -7,7 +7,7 @@ class GoogleLoginRequest(BaseModel):
 
 class AuthResponse(BaseModel):
     token: str
-    email: str  # 실제로는 Google providerUserId (sub), 이름 quirk 유지
+    email: str  # 실제 Google 이메일
 
 
 class ApiMessage(BaseModel):

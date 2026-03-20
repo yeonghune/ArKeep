@@ -32,6 +32,7 @@ import { SidebarFilters, FILTER_ITEMS } from "@/components/layout/SidebarFilters
 import { SyncBanner } from "@/components/layout/SyncBanner";
 import { useArticleFilter } from "@/hooks/useArticleFilter";
 import { useArticles } from "@/hooks/useArticles";
+import { useCategories } from "@/hooks/useCategories";
 import { useSession } from "@/hooks/useSession";
 import { useViewMode } from "@/hooks/useViewMode";
 
@@ -67,6 +68,7 @@ export default function HomePage() {
   const filterState = useArticleFilter();
   const articleState = useArticles({ ...filterState });
   const sessionState = useSession();
+  const categoryState = useCategories(Boolean(sessionState.session));
 
   const { showSyncBanner } = sessionState;
 
@@ -152,13 +154,17 @@ export default function HomePage() {
             open={isSidebarOpen}
             filter={filterState.filter}
             category={filterState.selectedCategory}
-            categories={articleState.facets.categories}
+            categories={categoryState.categories}
             topOffset={sidebarTopOffset}
             onClose={() => setIsSidebarOpen(false)}
             onFilterChange={filterState.setFilter}
             onCategoryChange={filterState.setSelectedCategory}
+            onAddCategory={categoryState.addCategory}
+            onRenameCategory={categoryState.renameCategory}
+            onDeleteCategory={categoryState.removeCategory}
             isLoggedIn={Boolean(sessionState.session)}
             userName={sessionState.session?.name ?? sessionState.session?.email}
+            userEmail={sessionState.session?.email}
             userAvatarUrl={sessionState.session?.pictureUrl}
             onAvatarClickWhenLoggedOut={() => setIsLoginModalOpen(true)}
             onLogout={() => sessionState.handleLogout(afterAuthChange)}
@@ -239,7 +245,7 @@ export default function HomePage() {
                     return (
                       <>
                         <Box sx={{ display: "flex", color: "#64748b" }}>{current?.icon}</Box>
-                        <Typography sx={{ fontSize: 18, fontWeight: 700, whiteSpace: "nowrap" }}>{current?.label}</Typography>
+                        <Typography sx={{ fontSize: 18, fontWeight: 500, whiteSpace: "nowrap" }}>{current?.label}</Typography>
                       </>
                     );
                   })()}
@@ -322,7 +328,7 @@ export default function HomePage() {
                         <ArticleCardItem
                           key={card.id}
                           card={card}
-                          categories={articleState.facets.categories}
+                          categories={categoryState.categories}
                           isBusy={articleState.mutatingArticleId === card.id}
                           onDelete={articleState.handleDelete}
                           onUpdateCategory={articleState.handleUpdateCategory}
@@ -336,7 +342,7 @@ export default function HomePage() {
                         <ArticleListItem
                           key={card.id}
                           card={card}
-                          categories={articleState.facets.categories}
+                          categories={categoryState.categories}
                           isBusy={articleState.mutatingArticleId === card.id}
                           onDelete={articleState.handleDelete}
                           onUpdateCategory={articleState.handleUpdateCategory}
@@ -366,7 +372,7 @@ export default function HomePage() {
         <SaveLinkModal
           open={isSaveModalOpen}
           onClose={() => setIsSaveModalOpen(false)}
-          categories={articleState.facets.categories}
+          categories={categoryState.categories}
           onSave={articleState.handleCreate}
         />
         <LoginModal

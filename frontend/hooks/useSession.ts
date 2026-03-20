@@ -47,7 +47,7 @@ export function useSession(): UseSessionReturn {
       if (!current?.token) return;
       saveSession({
         token: current.token,
-        email: profile.userId,
+        email: current.email,
         name: profile.displayName,
         pictureUrl: profile.avatarUrl ?? undefined,
       });

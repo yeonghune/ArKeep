@@ -26,10 +26,14 @@ type Props = {
 
 export function ArticleDetailModal({ card, onClose, onToggleRead, onSaveMemo, isBusy }: Props) {
   const [memo, setMemo] = useState("");
+  const [savedMemo, setSavedMemo] = useState("");
   const open = Boolean(card);
+  const isMemoChanged = memo !== savedMemo;
 
   useEffect(() => {
-    setMemo(card?.description ?? "");
+    const initial = card?.description ?? "";
+    setMemo(initial);
+    setSavedMemo(initial);
   }, [card?.id]);
 
   if (!card) return null;
@@ -120,18 +124,21 @@ export function ArticleDetailModal({ card, onClose, onToggleRead, onSaveMemo, is
         <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
           <Button
             variant="contained"
-            startIcon={<LaunchIcon />}
+            startIcon={<CheckCircleOutlineIcon />}
             sx={{ flex: 1, textTransform: "none", fontWeight: 700 }}
-            onClick={() => window.open(card.url, "_blank", "noopener,noreferrer")}
+            disabled={isBusy}
+            onClick={() => {
+              void onToggleRead(card);
+            }}
           >
-            브라우저에서 열기
+            {card.isRead ? "미열람으로 표시" : "열람으로 표시"}
           </Button>
           <Button
             variant="outlined"
             sx={{ textTransform: "none", fontWeight: 700 }}
-            disabled={isBusy}
+            disabled={isBusy || !isMemoChanged}
             onClick={() => {
-              void onSaveMemo(card, memo);
+              void onSaveMemo(card, memo).then(() => setSavedMemo(memo));
             }}
           >
             메모 저장
@@ -139,14 +146,11 @@ export function ArticleDetailModal({ card, onClose, onToggleRead, onSaveMemo, is
           <Button
             variant="outlined"
             color="inherit"
-            startIcon={<CheckCircleOutlineIcon />}
+            startIcon={<LaunchIcon />}
             sx={{ textTransform: "none", fontWeight: 700 }}
-            disabled={isBusy}
-            onClick={() => {
-              void onToggleRead(card);
-            }}
+            onClick={() => window.open(card.url, "_blank", "noopener,noreferrer")}
           >
-            {card.isRead ? "미열람으로 표시" : "열람으로 표시"}
+            브라우저에서 열기
           </Button>
         </Stack>
       </Box>

@@ -13,6 +13,7 @@ import MenuItem from "@mui/material/MenuItem";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { formatRelativeTime, getCategoryColor, getCategoryLabel } from "@/lib/utils";
+import type { Category } from "@/lib/categories";
 import type { ArticleCard } from "@/types";
 import { ArticleMedia } from "./ArticleMedia";
 import { CardSource } from "./CardSource";
@@ -20,7 +21,7 @@ import { CategoryEditDialog } from "@/components/dialogs/CategoryEditDialog";
 
 type Props = {
   card: ArticleCard;
-  categories: string[];
+  categories: Category[];
   isBusy?: boolean;
   onDelete: (card: ArticleCard) => Promise<void>;
   onUpdateCategory: (card: ArticleCard, category: string | null) => Promise<void>;
@@ -36,7 +37,7 @@ export const ArticleCardItem = memo(function ArticleCardItem({ card, categories,
   const categoryColor = getCategoryColor(card.category);
   const timeAgo = formatRelativeTime(card.createdAt);
   const isMenuOpen = Boolean(menuAnchorEl);
-  const availableCategories = useMemo(() => categories.filter((category) => category.trim().length > 0), [categories]);
+  const availableCategories = categories;
 
   const closeMenu = () => setMenuAnchorEl(null);
 

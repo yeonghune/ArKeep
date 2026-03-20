@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, PlainTextResponse
 
 from app.config import get_settings
-from app.routers import articles, auth, metadata, profile
+from app.routers import articles, auth, categories, metadata, profile
 from app.services.auth_service import AppException
 
 logging.basicConfig(level=logging.INFO)
@@ -75,5 +75,6 @@ async def health() -> PlainTextResponse:
 
 app.include_router(auth.router)
 app.include_router(articles.router)
+app.include_router(categories.router)
 app.include_router(metadata.router)
 app.include_router(profile.router)

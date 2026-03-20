@@ -117,7 +117,7 @@ class AuthService:
         self.db.add(rt)
         await self.db.commit()
 
-        return AuthResponse(token=access_token, email=subject), refresh_jti
+        return AuthResponse(token=access_token, email=payload.get("email") or subject), refresh_jti
 
     async def refresh(self, refresh_jti: str | None) -> tuple[AuthResponse, str]:
         """Rotate refresh token. Returns (AuthResponse, new_refresh_jti)."""

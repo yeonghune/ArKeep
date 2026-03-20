@@ -1,5 +1,7 @@
 import AddIcon from "@mui/icons-material/Add";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import DriveFileRenameOutlineIcon from "@mui/icons-material/DriveFileRenameOutline";
 import LibraryBooksIcon from "@mui/icons-material/LibraryBooks";
 import LogoutIcon from "@mui/icons-material/Logout";
 import MarkAsUnreadIcon from "@mui/icons-material/MarkAsUnread";
@@ -18,21 +20,26 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import { useTheme } from "@mui/material/styles";
-import { useEffect, useState, type MouseEvent } from "react";
+import { useEffect, useRef, useState, type MouseEvent } from "react";
 import { DRAWER_WIDTH, TOP_BAR_HEIGHT } from "@/constants/layout";
+import type { Category } from "@/lib/categories";
 import type { ArticleFilter } from "@/types";
 
 type Props = {
   open: boolean;
   filter: ArticleFilter;
   category: string;
-  categories: string[];
+  categories: Category[];
   topOffset: number;
   onClose: () => void;
   onFilterChange: (value: ArticleFilter) => void;
   onCategoryChange: (value: string) => void;
+  onAddCategory: (name: string) => Promise<Category>;
+  onRenameCategory: (id: number, name: string) => Promise<Category>;
+  onDeleteCategory: (id: number) => Promise<void>;
   isLoggedIn: boolean;
   userName?: string;
+  userEmail?: string;
   userAvatarUrl?: string;
   onAvatarClickWhenLoggedOut: () => void;
   onLogout: () => Promise<void>;
@@ -56,8 +63,12 @@ export function SidebarFilters({
   onClose,
   onFilterChange,
   onCategoryChange,
+  onAddCategory,
+  onRenameCategory,
+  onDeleteCategory,
   isLoggedIn,
   userName,
+  userEmail,
   userAvatarUrl,
   onAvatarClickWhenLoggedOut,
   onLogout,
@@ -66,6 +77,16 @@ export function SidebarFilters({
   const isMobile = useMediaQuery(theme.breakpoints.down("lg"));
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null);
   const [avatarLoadFailed, setAvatarLoadFailed] = useState(false);
+  const [catMenu, setCatMenu] = useState<{ catId: number; anchor: HTMLElement } | null>(null);
+  const [isAddingInline, setIsAddingInline] = useState(false);
+  const [newCatName, setNewCatName] = useState("");
+  const [isAdding, setIsAdding] = useState(false);
+  const [renamingCatId, setRenamingCatId] = useState<number | null>(null);
+  const [renameCatName, setRenameCatName] = useState("");
+  const [addError, setAddError] = useState("");
+  const isSubmittingAdd = useRef(false);
+  const [renameError, setRenameError] = useState("");
+  const isSubmittingRename = useRef(false);
 
   useEffect(() => {
     if (!(isMobile && open)) return;
@@ -75,11 +96,44 @@ export function SidebarFilters({
   }, [isMobile, open]);
 
   function handleAvatarClick(event: MouseEvent<HTMLElement>) {
-    if (!isLoggedIn) {
-      onAvatarClickWhenLoggedOut();
-      return;
-    }
+    if (!isLoggedIn) { onAvatarClickWhenLoggedOut(); return; }
     setMenuAnchor(event.currentTarget);
+  }
+
+  async function handleAddCategory() {
+    const name = newCatName.trim();
+    if (!name) { setIsAddingInline(false); setNewCatName(""); setAddError(""); return; }
+    isSubmittingAdd.current = true;
+    setIsAdding(true);
+    setAddError("");
+    try {
+      await onAddCategory(name);
+      setIsAddingInline(false);
+      setNewCatName("");
+    } catch {
+      setAddError("이미 존재하는 카테고리입니다.");
+    } finally {
+      setIsAdding(false);
+      isSubmittingAdd.current = false;
+    }
+  }
+
+  async function handleRenameCategory(id: number) {
+    const name = renameCatName.trim();
+    if (!name) { setRenamingCatId(null); setRenameError(""); return; }
+    isSubmittingRename.current = true;
+    setRenameError("");
+    try {
+      const updated = await onRenameCategory(id, name);
+      if (category === categories.find((c) => c.id === id)?.name) {
+        onCategoryChange(updated.name);
+      }
+      setRenamingCatId(null);
+    } catch {
+      setRenameError("이미 존재하는 카테고리입니다.");
+    } finally {
+      isSubmittingRename.current = false;
+    }
   }
 
   const effectiveAvatarUrl = isLoggedIn && !avatarLoadFailed ? userAvatarUrl : undefined;
@@ -87,61 +141,50 @@ export function SidebarFilters({
   const panelBody = (
     <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
 
-      {/* 유저 정보 — 상단 바와 동일 높이 */}
+      {/* 유저 정보 */}
       <Box sx={{ height: `${TOP_BAR_HEIGHT}px`, display: "flex", alignItems: "center" }}>
-      <Box
-        sx={{
-          flex: 1,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          px: 1,
-          py: 0.5,
-          borderRadius: 1,
-          cursor: "pointer",
-          "&:hover": { bgcolor: SELECTED_BG },
-          "&:hover .close-btn": { opacity: 1 },
-          transition: "background-color 120ms ease",
-        }}
-        onClick={handleAvatarClick}
-      >
-        <Stack direction="row" spacing={1} alignItems="center" sx={{ minWidth: 0 }}>
-          <Avatar
-            src={effectiveAvatarUrl}
-            imgProps={{ referrerPolicy: "no-referrer" }}
-            onError={() => setAvatarLoadFailed(true)}
-            sx={{ width: 22, height: 22, bgcolor: "#e2e8f0", color: "#94a3b8", flexShrink: 0 }}
-          >
-            <PersonIcon sx={{ fontSize: 13 }} />
-          </Avatar>
-          <Typography noWrap sx={{ fontSize: 12, fontWeight: 700, color: "#374151", minWidth: 0 }}>
-            {isLoggedIn ? (userName ?? "사용자") : "게스트"}
-          </Typography>
-        </Stack>
-
-        {/* PC hover 시 ‹ 닫기 버튼 */}
-        <IconButton
-          className="close-btn"
-          size="small"
-          onClick={(e) => { e.stopPropagation(); onClose(); }}
+        <Box
           sx={{
-            opacity: 0,
-            transition: "opacity 120ms ease",
-            display: { xs: "none", lg: "flex" },
-            p: 0.25,
-            color: "#94a3b8",
-            "&:hover": { bgcolor: "transparent", color: "#1e293b" },
+            flex: 1, display: "flex", alignItems: "center", justifyContent: "space-between",
+            px: 1, py: 0.5, borderRadius: 1, cursor: "pointer",
+            "&:hover": { bgcolor: SELECTED_BG },
+            "&:hover .close-btn": { opacity: 1 },
+            transition: "background-color 120ms ease",
           }}
+          onClick={handleAvatarClick}
         >
-          <ChevronLeftIcon sx={{ fontSize: 16 }} />
-        </IconButton>
-      </Box>
+          <Stack direction="row" spacing={1} alignItems="center" sx={{ minWidth: 0 }}>
+            <Avatar
+              src={effectiveAvatarUrl}
+              imgProps={{ referrerPolicy: "no-referrer" }}
+              onError={() => setAvatarLoadFailed(true)}
+              sx={{ width: 22, height: 22, bgcolor: "#e2e8f0", color: "#94a3b8", flexShrink: 0 }}
+            >
+              <PersonIcon sx={{ fontSize: 13 }} />
+            </Avatar>
+            <Typography noWrap sx={{ fontSize: 14, fontWeight: 700, color: "#374151", minWidth: 0 }}>
+              {isLoggedIn ? (userName ?? "사용자") : "게스트"}
+            </Typography>
+          </Stack>
+          <IconButton
+            className="close-btn"
+            size="small"
+            onClick={(e) => { e.stopPropagation(); onClose(); }}
+            sx={{
+              opacity: 0, transition: "opacity 120ms ease",
+              display: { xs: "none", lg: "flex" }, p: 0.25,
+              color: "#94a3b8", "&:hover": { bgcolor: "transparent", color: "#1e293b" },
+            }}
+          >
+            <ChevronLeftIcon sx={{ fontSize: 16 }} />
+          </IconButton>
+        </Box>
       </Box>
 
       {/* 로그아웃 드롭다운 */}
       <Menu anchorEl={menuAnchor} open={Boolean(menuAnchor)} onClose={() => setMenuAnchor(null)}>
         <MenuItem disabled>
-          <ListItemText primary={userName ?? "사용자"} primaryTypographyProps={{ fontSize: 13 }} />
+          <ListItemText primary={userEmail ?? userName ?? "사용자"} primaryTypographyProps={{ fontSize: 13 }} />
         </MenuItem>
         <Divider />
         <MenuItem onClick={() => { void onLogout(); setMenuAnchor(null); }}>
@@ -151,91 +194,173 @@ export function SidebarFilters({
       </Menu>
 
       {/* 필터 버튼 */}
-      <Box sx={{ mt: 1.5 }}>
-        {FILTER_ITEMS.map(({ value, label, icon }) => {
-          const isSelected = filter === value;
-          return (
-            <Box
-              key={value}
-              onClick={() => onFilterChange(value)}
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                gap: 1.25,
-                px: 1.5,
-                py: 0.875,
-                mb: 0.25,
-                borderRadius: 1,
-                cursor: "pointer",
-                fontSize: 13,
-                fontWeight: 400,
-                bgcolor: "transparent",
-                color: "#1e293b",
-                "&:hover": { bgcolor: SELECTED_BG },
-                transition: "background-color 120ms ease",
-              }}
-            >
-              <Box sx={{ display: "flex", color: "#64748b" }}>{icon}</Box>
-              {label}
-            </Box>
-          );
-        })}
+      <Box sx={{ mt: 0.5 }}>
+        {FILTER_ITEMS.map(({ value, label, icon }) => (
+          <Box
+            key={value}
+            onClick={() => onFilterChange(value)}
+            sx={{
+              display: "flex", alignItems: "center", gap: 1.25,
+              px: 1, py: 0.5, borderRadius: 1, cursor: "pointer",
+              fontSize: 13, fontWeight: 400, bgcolor: "transparent", color: "#1e293b",
+              "&:hover": { bgcolor: SELECTED_BG },
+              transition: "background-color 120ms ease",
+            }}
+          >
+            <Box sx={{ display: "flex", color: "#64748b" }}>{icon}</Box>
+            {label}
+          </Box>
+        ))}
       </Box>
 
       {/* 카테고리 레이블 + 추가 버튼 */}
-      <Box sx={{ mt: 2 }} />
-      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", px: 1.5, mb: 1 }}>
+      <Box sx={{ mt: 1.5 }} />
+      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", px: 1, mb: 0.5 }}>
         <Typography sx={{ fontSize: 11, fontWeight: 600, color: "#94a3b8", textTransform: "uppercase", letterSpacing: 0.5 }}>
           카테고리
         </Typography>
-        <IconButton size="small" sx={{ p: 0.25, color: "#94a3b8", "&:hover": { bgcolor: SELECTED_BG, color: SELECTED_COLOR } }}>
-          <AddIcon sx={{ fontSize: 16 }} />
-        </IconButton>
+        {isLoggedIn && (
+          <IconButton
+            size="small"
+            onClick={() => { setNewCatName(""); setIsAddingInline(true); }}
+            sx={{ p: 0.25, color: "#94a3b8", "&:hover": { bgcolor: SELECTED_BG, color: SELECTED_COLOR } }}
+          >
+            <AddIcon sx={{ fontSize: 16 }} />
+          </IconButton>
+        )}
       </Box>
 
       {/* 카테고리 목록 */}
       <Box sx={{ flex: 1, overflowY: "auto" }}>
-        {["", ...categories].map((cat) => {
-          const isSelected = category === cat;
+        {/* 인라인 추가 입력 */}
+        {isAddingInline && (
+          <Box sx={{ borderRadius: 1, bgcolor: SELECTED_BG }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, px: 1, py: 0.25 }}>
+              <AddIcon sx={{ fontSize: 14, color: "#94a3b8", flexShrink: 0 }} />
+              <Box
+                component="input"
+                autoFocus
+                disabled={isAdding}
+                value={newCatName}
+                onChange={(e) => { setNewCatName(e.target.value); setAddError(""); }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") void handleAddCategory();
+                  if (e.key === "Escape") { setIsAddingInline(false); setNewCatName(""); setAddError(""); }
+                }}
+                onBlur={() => { if (!isSubmittingAdd.current) { setIsAddingInline(false); setNewCatName(""); setAddError(""); } }}
+                placeholder="새 카테고리"
+                sx={{
+                  flex: 1, border: "none", outline: "none", bgcolor: "transparent",
+                  fontSize: 13, color: "#1e293b", fontFamily: "inherit",
+                  "&::placeholder": { color: "#94a3b8" },
+                }}
+              />
+            </Box>
+            {addError && (
+              <Box sx={{ px: 1, pb: 0.5, fontSize: 11, color: "#ef4444" }}>{addError}</Box>
+            )}
+          </Box>
+        )}
+        {/* 모든 카테고리 */}
+        <Box
+          onClick={() => onCategoryChange("")}
+          sx={{
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            px: 1, py: 0.5, borderRadius: 1, cursor: "pointer",
+            fontSize: 13, fontWeight: category === "" ? 500 : 400,
+            bgcolor: category === "" ? SELECTED_BG : "transparent",
+            color: category === "" ? SELECTED_COLOR : "#1e293b",
+            "&:hover": { bgcolor: SELECTED_BG },
+            transition: "background-color 120ms ease",
+          }}
+        >
+          <span>모든 카테고리</span>
+        </Box>
+
+        {categories.map((cat) => {
+          const isSelected = category === cat.name;
+          if (renamingCatId === cat.id) {
+            return (
+              <Box key={cat.id} sx={{ borderRadius: 1, bgcolor: SELECTED_BG }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, px: 1, py: 0.25 }}>
+                  <AddIcon sx={{ fontSize: 14, color: "#94a3b8", flexShrink: 0 }} />
+                  <Box
+                    component="input"
+                    autoFocus
+                    value={renameCatName}
+                    onChange={(e) => { setRenameCatName(e.target.value); setRenameError(""); }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") void handleRenameCategory(cat.id);
+                      if (e.key === "Escape") { setRenamingCatId(null); setRenameError(""); }
+                    }}
+                    onBlur={() => { if (!isSubmittingRename.current) { setRenamingCatId(null); setRenameError(""); } }}
+                    sx={{
+                      flex: 1, border: "none", outline: "none", bgcolor: "transparent",
+                      fontSize: 13, color: "#1e293b", fontFamily: "inherit",
+                    }}
+                  />
+                </Box>
+                {renameError && (
+                  <Box sx={{ px: 1, pb: 0.5, fontSize: 11, color: "#ef4444" }}>{renameError}</Box>
+                )}
+              </Box>
+            );
+          }
           return (
             <Box
-              key={cat || "__all__"}
-              onClick={() => onCategoryChange(cat)}
+              key={cat.id}
+              onClick={() => onCategoryChange(cat.name)}
               sx={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                px: 1.5,
-                py: 0.875,
-                mb: 0.25,
-                borderRadius: 1,
-                cursor: "pointer",
-                fontSize: 13,
-                fontWeight: isSelected ? 500 : 400,
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+                px: 1, py: 0.5, borderRadius: 1, cursor: "pointer",
+                fontSize: 13, fontWeight: isSelected ? 500 : 400,
                 bgcolor: isSelected ? SELECTED_BG : "transparent",
                 color: isSelected ? SELECTED_COLOR : "#1e293b",
-                "&:hover": {
-                  bgcolor: SELECTED_BG,
-                  "& .more-btn": { opacity: 1 },
-                },
+                "&:hover": { bgcolor: SELECTED_BG, "& .more-btn": { opacity: 1 } },
                 transition: "background-color 120ms ease",
               }}
             >
-              <span>{cat || "모든 카테고리"}</span>
+              <span>{cat.name}</span>
               <IconButton
                 size="small"
                 className="more-btn"
-                onClick={(e) => e.stopPropagation()}
-                sx={{
-                  opacity: 0,
-                  transition: "opacity 120ms ease",
-                  p: 0.25,
-                  color: "#64748b",
-                  "&:hover": { bgcolor: "transparent" },
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setCatMenu({ catId: cat.id, anchor: e.currentTarget });
                 }}
+                sx={{ opacity: 0, transition: "opacity 120ms ease", p: 0.25, color: "#64748b", "&:hover": { bgcolor: "transparent" } }}
               >
                 <MoreHorizIcon sx={{ fontSize: 16 }} />
               </IconButton>
+              <Menu
+                anchorEl={catMenu?.anchor}
+                open={catMenu?.catId === cat.id}
+                onClose={() => setCatMenu(null)}
+              >
+                <MenuItem
+                  onClick={() => {
+                    setRenameCatName(cat.name);
+                    setRenamingCatId(cat.id);
+                    setCatMenu(null);
+                  }}
+                  sx={{ fontSize: 13 }}
+                >
+                  <ListItemIcon><DriveFileRenameOutlineIcon sx={{ fontSize: 16 }} /></ListItemIcon>
+                  <ListItemText primary="수정" primaryTypographyProps={{ fontSize: 13 }} />
+                </MenuItem>
+                <MenuItem
+                  onClick={() => {
+                    void onDeleteCategory(cat.id).then(() => {
+                      if (category === cat.name) onCategoryChange("");
+                    });
+                    setCatMenu(null);
+                  }}
+                  sx={{ color: "#ef4444", fontSize: 13 }}
+                >
+                  <ListItemIcon><DeleteOutlineIcon sx={{ fontSize: 16, color: "#ef4444" }} /></ListItemIcon>
+                  <ListItemText primary="삭제" primaryTypographyProps={{ fontSize: 13 }} />
+                </MenuItem>
+              </Menu>
             </Box>
           );
         })}
@@ -243,36 +368,27 @@ export function SidebarFilters({
     </Box>
   );
 
+  const sidebarSx = { pt: 0, px: 1.5, pb: 2 };
+
   return (
     <>
       {open ? (
         <>
-          {/* 모바일 배경 오버레이 */}
           <Box
             onClick={onClose}
             sx={{
-              display: { xs: "block", lg: "none" },
-              position: "fixed",
-              inset: 0,
-              top: `${topOffset}px`,
-              bgcolor: "rgba(0,0,0,0.3)",
-              zIndex: (muiTheme) => muiTheme.zIndex.appBar - 2,
+              display: { xs: "block", lg: "none" }, position: "fixed",
+              inset: 0, top: `${topOffset}px`, bgcolor: "rgba(0,0,0,0.3)",
+              zIndex: (t) => t.zIndex.appBar - 2,
             }}
           />
-          {/* 모바일 드로어 */}
           <Box
             component="aside"
             sx={{
-              display: { xs: "block", lg: "none" },
-              position: "fixed",
-              left: 0,
-              top: `${topOffset}px`,
-              bottom: 0,
-              width: DRAWER_WIDTH,
-              bgcolor: "#f8fafc",
-              zIndex: (muiTheme) => muiTheme.zIndex.appBar - 1,
-              boxShadow: "4px 0 16px rgba(0,0,0,0.12)",
-              pt: 0, px: 2, pb: 2,
+              display: { xs: "block", lg: "none" }, position: "fixed",
+              left: 0, top: `${topOffset}px`, bottom: 0, width: DRAWER_WIDTH,
+              bgcolor: "#f8fafc", zIndex: (t) => t.zIndex.appBar - 1,
+              boxShadow: "4px 0 16px rgba(0,0,0,0.12)", ...sidebarSx,
             }}
           >
             {panelBody}
@@ -280,22 +396,16 @@ export function SidebarFilters({
         </>
       ) : null}
 
-      {/* PC 사이드바 */}
       <Box
         component="aside"
         sx={{
-          display: { xs: "none", lg: "block" },
-          position: "fixed",
-          left: 0,
-          top: `${topOffset}px`,
-          width: DRAWER_WIDTH,
-          height: `calc(100vh - ${topOffset}px)`,
-          bgcolor: "#f8fafc",
+          display: { xs: "none", lg: "block" }, position: "fixed",
+          left: 0, top: `${topOffset}px`, width: DRAWER_WIDTH,
+          height: `calc(100vh - ${topOffset}px)`, bgcolor: "#f8fafc",
           borderRight: "1px solid #e2e8f0",
           transform: open ? "translateX(0)" : "translateX(-100%)",
           transition: "transform 180ms ease",
-          pointerEvents: open ? "auto" : "none",
-          pt: 0, px: 2, pb: 2,
+          pointerEvents: open ? "auto" : "none", ...sidebarSx,
         }}
       >
         {panelBody}
