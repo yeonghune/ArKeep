@@ -43,7 +43,7 @@ export function SyncBanner({ onLoginClick, onDismiss }: Props) {
                 fontSize: { xs: 13, sm: 14 }
               }}
             >
-              모든 기기에서 목록을 동기화하려면 로그인하세요.
+              어디서든 이어서 사용하세요
             </Typography>
           </Stack>
           <Stack direction="row" spacing={0.25} alignItems="center" sx={{ flexShrink: 0 }}>

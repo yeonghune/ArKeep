@@ -25,7 +25,7 @@ import TextField from "@mui/material/TextField";
 import { ThemeProvider } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import { HOME_THEME } from "@/constants/theme";
-import { CONTENT_GAP, DRAWER_WIDTH, SYNC_BANNER_HEIGHT, TOP_BAR_HEIGHT } from "@/constants/layout";
+import { DRAWER_WIDTH, SYNC_BANNER_HEIGHT, TOP_BAR_HEIGHT } from "@/constants/layout";
 import { ArticleCardItem } from "@/components/article/ArticleCardItem";
 import { ArticleListItem } from "@/components/article/ArticleListItem";
 import { SidebarFilters, FILTER_ITEMS } from "@/components/layout/SidebarFilters";
@@ -74,7 +74,6 @@ export default function HomePage() {
     () => showSyncBanner ? SYNC_BANNER_HEIGHT : 0,
     [showSyncBanner]
   );
-  const contentTopOffset = useMemo(() => sidebarTopOffset + CONTENT_GAP, [sidebarTopOffset]);
 
   // 사이드바 반응형 미디어쿼리
   useEffect(() => {
@@ -231,7 +230,7 @@ export default function HomePage() {
             </Box>
 
             {/* 콘텐츠 영역 */}
-            <Box sx={{ px: { xs: 2, sm: 3, lg: 4 }, pt: `${contentTopOffset}px`, pb: 3 }}>
+            <Box sx={{ px: { xs: 2, sm: 3, lg: 4 }, pt: 1, pb: 3 }}>
               {/* 타이틀 바 */}
               <Stack direction="row" justifyContent="space-between" alignItems="center" flexWrap="wrap" rowGap={1} sx={{ mb: 2 }}>
                 <Stack direction="row" spacing={1} alignItems="center">
