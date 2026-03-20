@@ -18,7 +18,7 @@ class Category(Base):
         UniqueConstraint("user_id", "name", name="uq_categories_user_name"),
         CheckConstraint("name != '모든 카테고리'", name="ck_categories_not_reserved"),
         CheckConstraint(
-            r"name ~ '^[가-힣ㄱ-ㅎㅏ-ㅣ0-9 ]+$'",
+            r"name ~ '^[가-힣ㄱ-ㅎㅏ-ㅣa-zA-Z0-9 ]+$'",
             name="ck_categories_allowed_chars",
         ),
     )

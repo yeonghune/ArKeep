@@ -13,6 +13,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.article import Article
+from app.models.category import Category
 from app.models.user import User
 from app.schemas.article import (
     ArticleFacetsResponse,
@@ -48,10 +49,20 @@ def _to_response(article: Article) -> ArticleResponse:
         description=article.description,
         thumbnailUrl=article.thumbnail_url,
         domain=article.domain,
-        category=article.category,
+        category=article.category.name if article.category else None,
         isRead=article.is_read,
         createdAt=article.created_at,
     )
+
+
+async def _resolve_category_id(db: AsyncSession, user_id: int, name: str | None) -> int | None:
+    if not name:
+        return None
+    result = await db.execute(
+        select(Category).where(Category.user_id == user_id, Category.name == name)
+    )
+    cat = result.scalar_one_or_none()
+    return cat.id if cat else None
 
 
 class ArticleService:
@@ -77,6 +88,7 @@ class ArticleService:
 
         domain = _extract_domain(body.url)
         now = datetime.datetime.now(datetime.timezone.utc)
+        category_id = await _resolve_category_id(self.db, user.id, body.category)
 
         article = Article(
             public_id=uuid.uuid4(),
@@ -86,7 +98,7 @@ class ArticleService:
             description=description,
             thumbnail_url=thumbnail_url,
             domain=domain,
-            category=body.category,
+            category_id=category_id,
             is_read=False,
             created_at=now,
         )
@@ -120,7 +132,8 @@ class ArticleService:
         if query:
             stmt = stmt.where(func.lower(Article.title).contains(query.lower()))
         if category:
-            stmt = stmt.where(Article.category == category)
+            cat_id = await _resolve_category_id(self.db, user.id, category)
+            stmt = stmt.where(Article.category_id == cat_id)
         if domain:
             stmt = stmt.where(Article.domain == domain)
 
@@ -155,7 +168,7 @@ class ArticleService:
         if body.isRead is not None:
             article.is_read = body.isRead
         if body.category is not None:
-            article.category = body.category
+            article.category_id = await _resolve_category_id(self.db, user.id, body.category)
         if body.description is not None:
             article.description = body.description[:1000]
 
@@ -175,14 +188,11 @@ class ArticleService:
 
     async def facets(self, user: User) -> ArticleFacetsResponse:
         cat_stmt = (
-            select(Article.category)
-            .where(
-                Article.user_id == user.id,
-                Article.category.isnot(None),
-                Article.category != "",
-            )
+            select(Category.name)
+            .join(Article, Article.category_id == Category.id)
+            .where(Article.user_id == user.id)
             .distinct()
-            .order_by(asc(Article.category))
+            .order_by(asc(Category.name))
         )
         dom_stmt = (
             select(Article.domain)
@@ -216,6 +226,8 @@ class ArticleService:
                 if thumbnail_url:
                     thumbnail_url = thumbnail_url[:2048]
 
+                category_id = await _resolve_category_id(self.db, user.id, item.category)
+
                 article = Article(
                     public_id=uuid.uuid4(),
                     user_id=user.id,
@@ -224,7 +236,7 @@ class ArticleService:
                     description=description,
                     thumbnail_url=thumbnail_url,
                     domain=domain[:255],
-                    category=item.category,
+                    category_id=category_id,
                     is_read=item.isRead or False,
                     created_at=now,
                 )

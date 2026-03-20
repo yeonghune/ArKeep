@@ -145,6 +145,7 @@ export const ArticleListItem = memo(function ArticleListItem({ card, categories,
         open={isMenuOpen}
         onClose={closeMenu}
         onClick={(event) => event.stopPropagation()}
+        PaperProps={{ elevation: 0, sx: { boxShadow: "0 2px 8px rgba(0,0,0,0.08)", border: "1px solid #e2e8f0", borderRadius: 1.5 } }}
       >
         <MenuItem onClick={() => { setIsCategoryDialogOpen(true); closeMenu(); }}>
           <ListItemIcon>
