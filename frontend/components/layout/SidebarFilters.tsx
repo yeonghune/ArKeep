@@ -25,6 +25,23 @@ import { DRAWER_WIDTH, TOP_BAR_HEIGHT } from "@/constants/layout";
 import type { Category } from "@/lib/categories";
 import type { ArticleFilter } from "@/types";
 
+const CAT_MAX_LENGTH = 15;
+const CAT_RESERVED = "모든 카테고리";
+const CAT_ALLOWED = /^[가-힣ㄱ-ㅎㅏ-ㅣ0-9 ]*$/;
+
+function filterCatInput(value: string): string {
+  return value.replace(/[^가-힣ㄱ-ㅎㅏ-ㅣ0-9 ]/g, "").slice(0, CAT_MAX_LENGTH);
+}
+
+function validateCatName(name: string): string {
+  const normalized = name.replace(/ {2,}/g, " ").trim();
+  if (!normalized) return "";
+  if (normalized === CAT_RESERVED) return `"${CAT_RESERVED}"는 예약어입니다.`;
+  if (normalized.length > CAT_MAX_LENGTH) return `${CAT_MAX_LENGTH}자를 초과할 수 없습니다.`;
+  if (!CAT_ALLOWED.test(normalized)) return "한글, 숫자, 띄어쓰기만 사용할 수 있습니다.";
+  return "";
+}
+
 type Props = {
   open: boolean;
   filter: ArticleFilter;
@@ -101,13 +118,15 @@ export function SidebarFilters({
   }
 
   async function handleAddCategory() {
-    const name = newCatName.trim();
-    if (!name) { setIsAddingInline(false); setNewCatName(""); setAddError(""); return; }
+    const normalized = newCatName.replace(/ {2,}/g, " ").trim();
+    if (!normalized) { setIsAddingInline(false); setNewCatName(""); setAddError(""); return; }
+    const err = validateCatName(normalized);
+    if (err) { setAddError(err); return; }
     isSubmittingAdd.current = true;
     setIsAdding(true);
     setAddError("");
     try {
-      await onAddCategory(name);
+      await onAddCategory(normalized);
       setIsAddingInline(false);
       setNewCatName("");
     } catch {
@@ -119,12 +138,14 @@ export function SidebarFilters({
   }
 
   async function handleRenameCategory(id: number) {
-    const name = renameCatName.trim();
-    if (!name) { setRenamingCatId(null); setRenameError(""); return; }
+    const normalized = renameCatName.replace(/ {2,}/g, " ").trim();
+    if (!normalized) { setRenamingCatId(null); setRenameError(""); return; }
+    const err = validateCatName(normalized);
+    if (err) { setRenameError(err); return; }
     isSubmittingRename.current = true;
     setRenameError("");
     try {
-      const updated = await onRenameCategory(id, name);
+      const updated = await onRenameCategory(id, normalized);
       if (category === categories.find((c) => c.id === id)?.name) {
         onCategoryChange(updated.name);
       }
@@ -242,7 +263,7 @@ export function SidebarFilters({
                 autoFocus
                 disabled={isAdding}
                 value={newCatName}
-                onChange={(e) => { setNewCatName(e.target.value); setAddError(""); }}
+                onChange={(e) => { setNewCatName(filterCatInput(e.target.value)); setAddError(""); }}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") void handleAddCategory();
                   if (e.key === "Escape") { setIsAddingInline(false); setNewCatName(""); setAddError(""); }
@@ -255,6 +276,9 @@ export function SidebarFilters({
                   "&::placeholder": { color: "#94a3b8" },
                 }}
               />
+              <Box sx={{ fontSize: 11, color: newCatName.length >= CAT_MAX_LENGTH ? "#ef4444" : "#94a3b8", flexShrink: 0 }}>
+                {newCatName.length}/{CAT_MAX_LENGTH}
+              </Box>
             </Box>
             {addError && (
               <Box sx={{ px: 1, pb: 0.5, fontSize: 11, color: "#ef4444" }}>{addError}</Box>
@@ -288,7 +312,7 @@ export function SidebarFilters({
                     component="input"
                     autoFocus
                     value={renameCatName}
-                    onChange={(e) => { setRenameCatName(e.target.value); setRenameError(""); }}
+                    onChange={(e) => { setRenameCatName(filterCatInput(e.target.value)); setRenameError(""); }}
                     onKeyDown={(e) => {
                       if (e.key === "Enter") void handleRenameCategory(cat.id);
                       if (e.key === "Escape") { setRenamingCatId(null); setRenameError(""); }
@@ -299,6 +323,9 @@ export function SidebarFilters({
                       fontSize: 13, color: "#1e293b", fontFamily: "inherit",
                     }}
                   />
+                  <Box sx={{ fontSize: 11, color: renameCatName.length >= CAT_MAX_LENGTH ? "#ef4444" : "#94a3b8", flexShrink: 0 }}>
+                    {renameCatName.length}/{CAT_MAX_LENGTH}
+                  </Box>
                 </Box>
                 {renameError && (
                   <Box sx={{ px: 1, pb: 0.5, fontSize: 11, color: "#ef4444" }}>{renameError}</Box>
