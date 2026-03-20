@@ -154,4 +154,5 @@ jobs:
             export BACKEND_ORIGIN="http://backend:8000"
             echo ${{ secrets.GHCR_TOKEN }} | docker login ghcr.io -u ${{ secrets.GHCR_USERNAME }} --password-stdin
             docker compose -p arkeep-app -f docker-compose.prod.yml pull
+            docker compose -p arkeep-app -f docker-compose.prod.yml run --rm backend alembic upgrade head
             docker compose -p arkeep-app -f docker-compose.prod.yml up -d --force-recreate
