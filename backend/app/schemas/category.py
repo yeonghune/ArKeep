@@ -3,8 +3,8 @@ import re
 from pydantic import BaseModel, field_validator
 
 RESERVED_NAMES = {"모든 카테고리"}
-ALLOWED_PATTERN = re.compile(r"^[가-힣ㄱ-ㅎㅏ-ㅣ0-9 ]+$")
-MAX_LENGTH = 15
+ALLOWED_PATTERN = re.compile(r"^[가-힣ㄱ-ㅎㅏ-ㅣa-zA-Z0-9 ]+$")
+MAX_LENGTH = 10
 
 
 def validate_category_name(v: str) -> str:
@@ -12,11 +12,11 @@ def validate_category_name(v: str) -> str:
     if not v:
         raise ValueError("카테고리 이름은 비워둘 수 없습니다.")
     if v in RESERVED_NAMES:
-        raise ValueError(f'"{v}"는 예약어이므로 사용할 수 없습니다.')
+        raise ValueError(f'"{v}"는 사용할 수 없습니다.')
     if len(v) > MAX_LENGTH:
         raise ValueError(f"카테고리 이름은 {MAX_LENGTH}자를 초과할 수 없습니다.")
     if not ALLOWED_PATTERN.match(v):
-        raise ValueError("카테고리 이름은 한글, 숫자, 띄어쓰기만 사용할 수 있습니다.")
+        raise ValueError("카테고리 이름은 한글, 영어, 숫자, 띄어쓰기만 사용할 수 있습니다.")
     return v
 
 

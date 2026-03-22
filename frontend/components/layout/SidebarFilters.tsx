@@ -7,6 +7,7 @@ import LogoutIcon from "@mui/icons-material/Logout";
 import MarkAsUnreadIcon from "@mui/icons-material/MarkAsUnread";
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 import PersonIcon from "@mui/icons-material/Person";
+import SearchIcon from "@mui/icons-material/Search";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import Avatar from "@mui/material/Avatar";
 import Box from "@mui/material/Box";
@@ -25,7 +26,7 @@ import { DRAWER_WIDTH, TOP_BAR_HEIGHT } from "@/constants/layout";
 import type { Category } from "@/lib/categories";
 import type { ArticleFilter } from "@/types";
 
-const CAT_MAX_LENGTH = 15;
+const CAT_MAX_LENGTH = 10;
 const CAT_RESERVED = "모든 카테고리";
 const CAT_ALLOWED = /^[가-힣ㄱ-ㅎㅏ-ㅣa-zA-Z0-9 ]*$/;
 const CAT_INVALID_MSG = "한글, 영어, 숫자, 띄어쓰기만 허용됩니다.";
@@ -33,7 +34,7 @@ const CAT_INVALID_MSG = "한글, 영어, 숫자, 띄어쓰기만 허용됩니다
 function validateCatName(name: string): string {
   const normalized = name.replace(/ {2,}/g, " ").trim();
   if (!normalized) return "";
-  if (normalized === CAT_RESERVED) return `"${CAT_RESERVED}"는 예약어입니다.`;
+  if (normalized === CAT_RESERVED) return `"${CAT_RESERVED}"는 사용할 수 없습니다.`;
   if (normalized.length > CAT_MAX_LENGTH) return `${CAT_MAX_LENGTH}자를 초과할 수 없습니다.`;
   if (!CAT_ALLOWED.test(normalized)) return CAT_INVALID_MSG;
   return "";
@@ -93,14 +94,25 @@ export function SidebarFilters({
   const [avatarLoadFailed, setAvatarLoadFailed] = useState(false);
   const [catMenu, setCatMenu] = useState<{ catId: number; anchor: HTMLElement } | null>(null);
   const [isAddingInline, setIsAddingInline] = useState(false);
-  const [newCatName, setNewCatName] = useState("");
-  const [isAdding, setIsAdding] = useState(false);
   const [renamingCatId, setRenamingCatId] = useState<number | null>(null);
-  const [renameCatName, setRenameCatName] = useState("");
   const [addError, setAddError] = useState("");
   const isSubmittingAdd = useRef(false);
   const [renameError, setRenameError] = useState("");
   const isSubmittingRename = useRef(false);
+  const addInputRef = useRef<HTMLInputElement>(null);
+  const renameInputRef = useRef<HTMLInputElement>(null);
+  const catListRef = useRef<HTMLDivElement>(null);
+  const [isSearchingInline, setIsSearchingInline] = useState(false);
+  const [catSearchQuery, setCatSearchQuery] = useState("");
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (isSearchingInline || !category || !catListRef.current) return;
+    const el = catListRef.current.querySelector(`[data-cat-name="${CSS.escape(category)}"]`) as HTMLElement | null;
+    if (el) {
+      catListRef.current.scrollTop = el.offsetTop - catListRef.current.offsetTop;
+    }
+  }, [category, isSearchingInline]);
 
   useEffect(() => {
     if (!(isMobile && open)) return;
@@ -115,27 +127,27 @@ export function SidebarFilters({
   }
 
   async function handleAddCategory() {
-    const normalized = newCatName.replace(/ {2,}/g, " ").trim();
-    if (!normalized) { setIsAddingInline(false); setNewCatName(""); setAddError(""); return; }
+    if (isSubmittingAdd.current) return;
+    const raw = addInputRef.current?.value ?? "";
+    const normalized = raw.replace(/ {2,}/g, " ").trim();
+    if (!normalized) { setIsAddingInline(false); setAddError(""); return; }
     const err = validateCatName(normalized);
     if (err) { setAddError(err); return; }
     isSubmittingAdd.current = true;
-    setIsAdding(true);
     setAddError("");
     try {
       await onAddCategory(normalized);
       setIsAddingInline(false);
-      setNewCatName("");
-    } catch {
-      setAddError("이미 존재하는 카테고리입니다.");
+    } catch (e) {
+      setAddError(e instanceof Error ? e.message : "이미 존재하는 카테고리입니다.");
     } finally {
-      setIsAdding(false);
       isSubmittingAdd.current = false;
     }
   }
 
   async function handleRenameCategory(id: number) {
-    const normalized = renameCatName.replace(/ {2,}/g, " ").trim();
+    const raw = renameInputRef.current?.value ?? "";
+    const normalized = raw.replace(/ {2,}/g, " ").trim();
     if (!normalized) { setRenamingCatId(null); setRenameError(""); return; }
     const err = validateCatName(normalized);
     if (err) { setRenameError(err); return; }
@@ -147,8 +159,8 @@ export function SidebarFilters({
         onCategoryChange(updated.name);
       }
       setRenamingCatId(null);
-    } catch {
-      setRenameError("이미 존재하는 카테고리입니다.");
+    } catch (e) {
+      setRenameError(e instanceof Error ? e.message : "이미 존재하는 카테고리입니다.");
     } finally {
       isSubmittingRename.current = false;
     }
@@ -231,25 +243,59 @@ export function SidebarFilters({
         ))}
       </Box>
 
-      {/* 카테고리 레이블 + 추가 버튼 */}
+      {/* 카테고리 레이블 + 검색/추가 버튼 */}
       <Box sx={{ mt: 1.5 }} />
       <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", px: 1, mb: 0.5 }}>
         <Typography sx={{ fontSize: 11, fontWeight: 600, color: "#94a3b8", textTransform: "uppercase", letterSpacing: 0.5 }}>
           카테고리
         </Typography>
         {isLoggedIn && (
-          <IconButton
-            size="small"
-            onClick={() => { setNewCatName(""); setIsAddingInline(true); }}
-            sx={{ p: 0.25, color: "#94a3b8", "&:hover": { bgcolor: SELECTED_BG, color: SELECTED_COLOR } }}
-          >
-            <AddIcon sx={{ fontSize: 16 }} />
-          </IconButton>
+          <Box sx={{ display: "flex", alignItems: "center" }}>
+            <IconButton
+              size="small"
+              onClick={() => { setIsSearchingInline(true); setCatSearchQuery(""); }}
+              sx={{ p: 0.25, color: isSearchingInline ? SELECTED_COLOR : "#94a3b8", "&:hover": { bgcolor: SELECTED_BG, color: SELECTED_COLOR } }}
+            >
+              <SearchIcon sx={{ fontSize: 16 }} />
+            </IconButton>
+            <IconButton
+              size="small"
+              onClick={() => { setIsAddingInline(true); }}
+              sx={{ p: 0.25, color: "#94a3b8", "&:hover": { bgcolor: SELECTED_BG, color: SELECTED_COLOR } }}
+            >
+              <AddIcon sx={{ fontSize: 16 }} />
+            </IconButton>
+          </Box>
         )}
       </Box>
 
       {/* 카테고리 목록 */}
-      <Box sx={{ flex: 1, overflowY: "auto" }}>
+      <Box ref={catListRef} sx={{ flex: 1, overflowY: "auto" }}>
+        {/* 인라인 검색 입력 */}
+        {isSearchingInline && (
+          <Box sx={{ borderRadius: 1, bgcolor: SELECTED_BG, mb: 0.5 }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, px: 1, py: 0.25 }}>
+              <SearchIcon sx={{ fontSize: 14, color: "#94a3b8", flexShrink: 0 }} />
+              <Box
+                component="input"
+                autoFocus
+                ref={searchInputRef}
+                inputMode="search"
+                placeholder="카테고리 검색"
+                onChange={(e) => setCatSearchQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Escape") { setIsSearchingInline(false); setCatSearchQuery(""); }
+                }}
+                onBlur={() => { setTimeout(() => { setIsSearchingInline(false); setCatSearchQuery(""); }, 150); }}
+                sx={{
+                  flex: 1, border: "none", outline: "none", bgcolor: "transparent",
+                  fontSize: 13, color: "#1e293b", fontFamily: "inherit",
+                  "&::placeholder": { color: "#94a3b8" },
+                }}
+              />
+            </Box>
+          </Box>
+        )}
         {/* 인라인 추가 입력 */}
         {isAddingInline && (
           <Box sx={{ borderRadius: 1, bgcolor: SELECTED_BG }}>
@@ -258,23 +304,17 @@ export function SidebarFilters({
               <Box
                 component="input"
                 autoFocus
-                disabled={isAdding}
-                value={newCatName}
+                ref={addInputRef}
                 inputMode="text"
                 enterKeyHint="done"
                 onChange={(e) => {
-                  const raw = e.target.value;
-                  const val = raw.slice(0, CAT_MAX_LENGTH);
-                  setNewCatName(val);
-                  if (raw.length > CAT_MAX_LENGTH) setAddError(`${CAT_MAX_LENGTH}자를 넘을 수 없습니다.`);
-                  else if (val && !CAT_ALLOWED.test(val)) setAddError(CAT_INVALID_MSG);
-                  else setAddError("");
+                  if (e.target.value.length > CAT_MAX_LENGTH) e.target.value = e.target.value.slice(0, CAT_MAX_LENGTH);
                 }}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") void handleAddCategory();
-                  if (e.key === "Escape") { setIsAddingInline(false); setNewCatName(""); setAddError(""); }
+                  if (e.key === "Escape") { setIsAddingInline(false); setAddError(""); }
                 }}
-                onBlur={() => { if (!isSubmittingAdd.current) { setIsAddingInline(false); setNewCatName(""); setAddError(""); } }}
+                onBlur={() => { if (!isSubmittingAdd.current) { setIsAddingInline(false); setAddError(""); } }}
                 placeholder="새 카테고리"
                 sx={{
                   flex: 1, border: "none", outline: "none", bgcolor: "transparent",
@@ -289,7 +329,7 @@ export function SidebarFilters({
           </Box>
         )}
         {/* 모든 카테고리 */}
-        <Box
+        {!isSearchingInline && !isAddingInline && <Box
           onClick={() => onCategoryChange("")}
           sx={{
             display: "flex", alignItems: "center", justifyContent: "space-between",
@@ -302,10 +342,10 @@ export function SidebarFilters({
           }}
         >
           <span>모든 카테고리</span>
-        </Box>
+        </Box>}
 
-        {categories.map((cat) => {
-          const isSelected = category === cat.name;
+        {categories.filter((c) => !catSearchQuery || c.name.toLowerCase().includes(catSearchQuery.toLowerCase())).map((cat) => {
+          const isSelected = !isSearchingInline && category === cat.name;
           if (renamingCatId === cat.id) {
             return (
               <Box key={cat.id} sx={{ borderRadius: 1, bgcolor: SELECTED_BG }}>
@@ -314,16 +354,12 @@ export function SidebarFilters({
                   <Box
                     component="input"
                     autoFocus
-                    value={renameCatName}
+                    ref={renameInputRef}
+                    defaultValue={cat.name}
                     inputMode="text"
                     enterKeyHint="done"
                     onChange={(e) => {
-                      const raw = e.target.value;
-                      const val = raw.slice(0, CAT_MAX_LENGTH);
-                      setRenameCatName(val);
-                      if (raw.length > CAT_MAX_LENGTH) setRenameError(`${CAT_MAX_LENGTH}자를 넘을 수 없습니다.`);
-                      else if (val && !CAT_ALLOWED.test(val)) setRenameError(CAT_INVALID_MSG);
-                      else setRenameError("");
+                      if (e.target.value.length > CAT_MAX_LENGTH) e.target.value = e.target.value.slice(0, CAT_MAX_LENGTH);
                     }}
                     onKeyDown={(e) => {
                       if (e.key === "Enter") void handleRenameCategory(cat.id);
@@ -345,6 +381,7 @@ export function SidebarFilters({
           return (
             <Box
               key={cat.id}
+              data-cat-name={cat.name}
               onClick={() => onCategoryChange(cat.name)}
               sx={{
                 display: "flex", alignItems: "center", justifyContent: "space-between",
@@ -357,17 +394,19 @@ export function SidebarFilters({
               }}
             >
               <span>{cat.name}</span>
-              <IconButton
-                size="small"
-                className="more-btn"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setCatMenu({ catId: cat.id, anchor: e.currentTarget });
-                }}
-                sx={{ opacity: isMobile ? 1 : 0, transition: "opacity 120ms ease", p: 0.25, color: "#64748b", "&:hover": { bgcolor: "transparent" } }}
-              >
-                <MoreHorizIcon sx={{ fontSize: 16 }} />
-              </IconButton>
+              {!isSearchingInline && (
+                <IconButton
+                  size="small"
+                  className="more-btn"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setCatMenu({ catId: cat.id, anchor: e.currentTarget });
+                  }}
+                  sx={{ opacity: isMobile ? 1 : 0, transition: "opacity 120ms ease", p: 0.25, color: "#64748b", "&:hover": { bgcolor: "transparent" } }}
+                >
+                  <MoreHorizIcon sx={{ fontSize: 16 }} />
+                </IconButton>
+              )}
               <Menu
                 anchorEl={catMenu?.anchor}
                 open={catMenu?.catId === cat.id}
@@ -375,8 +414,8 @@ export function SidebarFilters({
                 PaperProps={{ elevation: 0, sx: { boxShadow: "0 2px 8px rgba(0,0,0,0.08)", border: "1px solid #e2e8f0", borderRadius: 1.5 } }}
               >
                 <MenuItem
-                  onClick={() => {
-                    setRenameCatName(cat.name);
+                  onClick={(e) => {
+                    e.stopPropagation();
                     setRenamingCatId(cat.id);
                     setCatMenu(null);
                   }}
@@ -386,7 +425,8 @@ export function SidebarFilters({
                   <ListItemText primary="수정" primaryTypographyProps={{ fontSize: 13 }} />
                 </MenuItem>
                 <MenuItem
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.stopPropagation();
                     void onDeleteCategory(cat.id).then(() => {
                       if (category === cat.name) onCategoryChange("");
                     });
