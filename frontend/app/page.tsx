@@ -179,18 +179,23 @@ export default function HomePage() {
               minHeight: "100vh",
             }}
           >
-            {/* 상단 바 (sticky): 햄버거 + 검색 + 추가 */}
+            {/* 상단 고정 영역 (sticky): 검색바 + 타이틀바 */}
             <Box
               sx={{
                 position: "sticky",
                 top: `${sidebarTopOffset}px`,
                 zIndex: 10,
                 bgcolor: "#ffffff",
+              }}
+            >
+            {/* 상단 바: 햄버거 + 로고 + 검색 + 추가 */}
+            <Box
+              sx={{
                 px: { xs: 2, sm: 3, lg: 4 },
                 height: `${TOP_BAR_HEIGHT}px`,
                 display: "flex",
                 alignItems: "center",
-                gap: 1.5,
+                gap: 1,
               }}
             >
               <IconButton
@@ -200,6 +205,39 @@ export default function HomePage() {
               >
                 <MenuIcon fontSize="small" />
               </IconButton>
+
+              {/* 로고 */}
+              <Box
+                onClick={() => window.location.reload()}
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 0.75,
+                  flexShrink: 0,
+                  userSelect: "none",
+                  mr: 0.5,
+                  cursor: "pointer",
+                }}
+              >
+                <Box
+                  component="img"
+                  src="/icon.svg"
+                  alt="ArKeep"
+                  sx={{ width: 24, height: 24, display: "block" }}
+                />
+                <Box
+                  component="span"
+                  sx={{
+                    display: { xs: "none", sm: "inline" },
+                    fontWeight: 700,
+                    fontSize: "0.95rem",
+                    color: "#1e293b",
+                    letterSpacing: "-0.3px",
+                  }}
+                >
+                  ArKeep
+                </Box>
+              </Box>
 
               <TextField
                 size="small"
@@ -229,32 +267,29 @@ export default function HomePage() {
                 size="small"
                 startIcon={<AddIcon />}
                 onClick={() => setIsSaveModalOpen(true)}
-                sx={{ flexShrink: 0, fontWeight: 600, whiteSpace: "nowrap", mr: "-4px", boxShadow: "none" }}
+                sx={{ flexShrink: 0, fontWeight: 600, whiteSpace: "nowrap", mr: "-5px", boxShadow: "none" }}
               >
                 추가
               </Button>
             </Box>
 
-            {/* 콘텐츠 영역 */}
-            <Box sx={{ px: { xs: 2, sm: 3, lg: 4 }, pt: 1, pb: 3 }}>
               {/* 타이틀 바 */}
-              <Stack direction="row" justifyContent="space-between" alignItems="center" flexWrap="wrap" rowGap={1} sx={{ mb: 2 }}>
+              <Stack direction="row" justifyContent="space-between" alignItems="center" flexWrap="wrap" rowGap={1} sx={{ px: { xs: 2, sm: 3, lg: 4 }, mb: 1 }}>
                 <Stack direction="row" spacing={1} alignItems="center">
                   {(() => {
                     const current = FILTER_ITEMS.find((f) => f.value === filterState.filter);
                     return (
                       <>
                         <Box sx={{ display: "flex", color: "#64748b" }}>{current?.icon}</Box>
-                        <Typography sx={{ fontSize: 18, fontWeight: 500, whiteSpace: "nowrap" }}>{current?.label}</Typography>
+                        <Typography sx={{ fontSize: 14, fontWeight: 500, whiteSpace: "nowrap" }}>
+                          {filterState.selectedCategory || "모든 카테고리"}
+                        </Typography>
                       </>
                     );
                   })()}
                   <Typography sx={{ fontSize: 14, fontWeight: 400, color: "#64748b", whiteSpace: "nowrap" }}>
-                    {articleState.totalItems}개 항목
+                    {articleState.totalItems}개
                   </Typography>
-                  {articleState.isRefreshing ? (
-                    <Typography sx={{ fontSize: 12, color: "#64748b" }}>불러오는 중...</Typography>
-                  ) : null}
                 </Stack>
 
                 <Stack direction="row" spacing={0.5} alignItems="center" sx={{ mr: "-5px" }}>
@@ -285,7 +320,11 @@ export default function HomePage() {
                 </Stack>
               </Stack>
 
-              <Divider sx={{ mb: 3, mx: { xs: -2, sm: -3, lg: -4 } }} />
+              <Divider />
+            </Box>
+
+            {/* 콘텐츠 영역 */}
+            <Box sx={{ px: { xs: 2, sm: 3, lg: 4 }, pt: 2, pb: 3 }}>
 
               {combinedError ? (
                 <Alert severity="error" sx={{ mb: 2 }}>

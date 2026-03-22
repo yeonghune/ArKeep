@@ -57,10 +57,15 @@ services:
       - "${FRONTEND_PORT:-3000}:3000"
     develop:
       watch:
-        - action: rebuild
+        - action: sync
           path: ./frontend/app
-        - action: rebuild
+          target: /app/app
+        - action: sync
+          path: ./frontend/components
+          target: /app/components
+        - action: sync
           path: ./frontend/public
+          target: /app/public
         - action: rebuild
           path: ./frontend/package.json
         - action: rebuild

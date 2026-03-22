@@ -25,6 +25,12 @@ class CategoryService:
         )
 
     async def create_category(self, user: User, body: CreateCategoryRequest) -> CategoryResponse:
+        count_result = await self.db.execute(
+            select(Category).where(Category.user_id == user.id)
+        )
+        if len(count_result.scalars().all()) >= 100:
+            raise AppException(400, "LIMIT_EXCEEDED", "카테고리는 최대 100개까지 생성할 수 있습니다.")
+
         result = await self.db.execute(
             select(Category).where(Category.user_id == user.id, Category.name == body.name)
         )

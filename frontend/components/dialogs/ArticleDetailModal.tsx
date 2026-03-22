@@ -27,6 +27,7 @@ type Props = {
 export function ArticleDetailModal({ card, onClose, onToggleRead, onSaveMemo, isBusy }: Props) {
   const [memo, setMemo] = useState("");
   const [savedMemo, setSavedMemo] = useState("");
+  const [isMemoSaving, setIsMemoSaving] = useState(false);
   const open = Boolean(card);
   const isMemoChanged = memo !== savedMemo;
 
@@ -136,9 +137,10 @@ export function ArticleDetailModal({ card, onClose, onToggleRead, onSaveMemo, is
           <Button
             variant="outlined"
             sx={{ textTransform: "none", fontWeight: 700 }}
-            disabled={isBusy || !isMemoChanged}
+            disabled={isMemoSaving || !isMemoChanged}
             onClick={() => {
-              void onSaveMemo(card, memo).then(() => setSavedMemo(memo));
+              setIsMemoSaving(true);
+              void onSaveMemo(card, memo).then(() => setSavedMemo(memo)).finally(() => setIsMemoSaving(false));
             }}
           >
             메모 저장

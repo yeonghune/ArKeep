@@ -182,15 +182,12 @@ export function useArticles({
   }
 
   async function handleSaveMemo(card: ArticleCard, memo: string) {
-    setMutatingArticleId(card.id);
     setListError(null);
     try {
       await patchArticle(card.id, { description: memo });
       await fetchArticles(false, page);
     } catch (error) {
       setListError(parseErrorMessage(error));
-    } finally {
-      setMutatingArticleId(null);
     }
   }
 
