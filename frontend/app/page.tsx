@@ -1,8 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { usePullToRefresh } from "@/hooks/usePullToRefresh";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import AddIcon from "@mui/icons-material/Add";
 import GridViewIcon from "@mui/icons-material/GridView";
 import MenuIcon from "@mui/icons-material/Menu";
@@ -78,8 +77,6 @@ export default function HomePage() {
     [showSyncBanner]
   );
 
-  const contentRef = useRef<HTMLDivElement>(null);
-  const { pullDistance, threshold } = usePullToRefresh(contentRef);
 
   // 사이드바 반응형 미디어쿼리
   useEffect(() => {
@@ -330,19 +327,7 @@ export default function HomePage() {
             </Box>
 
             {/* 콘텐츠 영역 */}
-            <Box ref={contentRef} sx={{ flex: 1, overflowY: "auto", overscrollBehavior: "contain", px: { xs: 2, sm: 3, lg: 4 }, pt: 2, pb: 3 }}>
-              {/* Pull-to-refresh 인디케이터 */}
-              {pullDistance > 0 && (
-                <Box sx={{ display: "flex", justifyContent: "center", mb: 1 }}>
-                  <CircularProgress
-                    size={22}
-                    variant={pullDistance >= threshold ? "indeterminate" : "determinate"}
-                    value={Math.min((pullDistance / threshold) * 100, 100)}
-                    sx={{ color: "#94a3b8" }}
-                  />
-                </Box>
-              )}
-
+            <Box sx={{ flex: 1, overflowY: "auto", px: { xs: 2, sm: 3, lg: 4 }, pt: 2, pb: 3 }}>
               {combinedError ? (
                 <Alert severity="error" sx={{ mb: 2 }}>
                   {combinedError}
