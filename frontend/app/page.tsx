@@ -139,6 +139,8 @@ export default function HomePage() {
           </Box>
         ) : null}
 
+        <Box sx={{ flexShrink: 0, height: `${sidebarTopOffset}px` }} />
+
         <Box sx={{ display: "flex", flex: 1, minHeight: 0 }}>
           {/* 사이드바 공간 확보 */}
           <Box
@@ -326,7 +328,7 @@ export default function HomePage() {
             </Box>
 
             {/* 콘텐츠 영역 */}
-            <Box sx={{ flex: 1, overflowY: "auto", overscrollBehavior: "contain", px: { xs: 2, sm: 3, lg: 4 }, pt: 2, pb: 3 }}>
+            <Box sx={{ flex: 1, overflowY: "auto", px: { xs: 2, sm: 3, lg: 4 }, pt: 2, pb: 3 }}>
 
               {combinedError ? (
                 <Alert severity="error" sx={{ mb: 2 }}>
