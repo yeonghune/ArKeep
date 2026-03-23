@@ -130,7 +130,7 @@ export default function HomePage() {
   return (
     <ThemeProvider theme={HOME_THEME}>
       <CssBaseline />
-      <Box sx={{ height: "100dvh", overflow: "hidden", display: "flex", flexDirection: "column", bgcolor: "background.default", color: "#1e293b" }}>
+      <Box sx={{ height: "100dvh", overflow: "clip", display: "flex", flexDirection: "column", bgcolor: "background.default", color: "#1e293b" }}>
         {showSyncBanner ? (
           <SyncBanner
             onLoginClick={() => setIsLoginModalOpen(true)}
@@ -180,8 +180,8 @@ export default function HomePage() {
               height: "100%",
               display: "flex",
               flexDirection: "column",
-              overflow: "hidden",
-              contain: "layout paint style",
+              overflow: "clip",
+              contain: "strict",
             }}
           >
             {/* 상단 고정 영역: 검색바 + 타이틀바 */}
