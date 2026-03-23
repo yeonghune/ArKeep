@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import AddIcon from "@mui/icons-material/Add";
 import GridViewIcon from "@mui/icons-material/GridView";
 import MenuIcon from "@mui/icons-material/Menu";
@@ -77,15 +78,8 @@ export default function HomePage() {
     [showSyncBanner]
   );
 
-  const tnbRef = useRef<HTMLDivElement>(null);
-  const [tnbHeight, setTnbHeight] = useState(0);
-  useEffect(() => {
-    const el = tnbRef.current;
-    if (!el) return;
-    const ro = new ResizeObserver(() => setTnbHeight(el.offsetHeight));
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const { pullDistance, threshold } = usePullToRefresh(contentRef);
 
   // 사이드바 반응형 미디어쿼리
   useEffect(() => {
@@ -139,7 +133,7 @@ export default function HomePage() {
   return (
     <ThemeProvider theme={HOME_THEME}>
       <CssBaseline />
-      <Box sx={{ minHeight: "100vh", bgcolor: "background.default", color: "#1e293b" }}>
+      <Box sx={{ height: "100dvh", overflow: "hidden", display: "flex", flexDirection: "column", bgcolor: "background.default", color: "#1e293b" }}>
         {showSyncBanner ? (
           <SyncBanner
             onLoginClick={() => setIsLoginModalOpen(true)}
@@ -147,9 +141,9 @@ export default function HomePage() {
           />
         ) : null}
 
-        <Box sx={{ height: `${sidebarTopOffset}px` }} />
+        <Box sx={{ flexShrink: 0, height: `${sidebarTopOffset}px` }} />
 
-        <Box sx={{ display: "flex" }}>
+        <Box sx={{ display: "flex", flex: 1, minHeight: 0 }}>
           {/* 사이드바 공간 확보 */}
           <Box
             sx={{
@@ -186,20 +180,18 @@ export default function HomePage() {
               flex: 1,
               minWidth: 0,
               bgcolor: "#ffffff",
-              minHeight: "100vh",
+              height: "100%",
+              display: "flex",
+              flexDirection: "column",
+              overflow: "hidden",
             }}
           >
             {/* 상단 고정 영역: 검색바 + 타이틀바 */}
             <Box
-              ref={tnbRef}
               sx={{
-                position: "fixed",
-                top: `${sidebarTopOffset}px`,
-                left: { xs: 0, lg: isSidebarOpen ? DRAWER_WIDTH : 0 },
-                right: 0,
+                flexShrink: 0,
                 zIndex: 10,
                 bgcolor: "#ffffff",
-                transition: "left 180ms ease",
               }}
             >
             {/* 상단 바: 햄버거 + 로고 + 검색 + 추가 */}
@@ -338,7 +330,18 @@ export default function HomePage() {
             </Box>
 
             {/* 콘텐츠 영역 */}
-            <Box sx={{ px: { xs: 2, sm: 3, lg: 4 }, paddingTop: `${tnbHeight + 16}px`, pb: 3 }}>
+            <Box ref={contentRef} sx={{ flex: 1, overflowY: "auto", overscrollBehavior: "contain", px: { xs: 2, sm: 3, lg: 4 }, pt: 2, pb: 3 }}>
+              {/* Pull-to-refresh 인디케이터 */}
+              {pullDistance > 0 && (
+                <Box sx={{ display: "flex", justifyContent: "center", mb: 1 }}>
+                  <CircularProgress
+                    size={22}
+                    variant={pullDistance >= threshold ? "indeterminate" : "determinate"}
+                    value={Math.min((pullDistance / threshold) * 100, 100)}
+                    sx={{ color: "#94a3b8" }}
+                  />
+                </Box>
+              )}
 
               {combinedError ? (
                 <Alert severity="error" sx={{ mb: 2 }}>
