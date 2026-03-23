@@ -19,15 +19,29 @@ type Props = {
   categories: Category[];
   isLoggedIn: boolean;
   onSave: (url: string, category?: string | null, description?: string | null) => Promise<void>;
+  onAddCategory: (name: string) => Promise<Category>;
 };
 
 const URL_PATTERN = /^https?:\/\/.+/i;
+const CATEGORY_MAX_LENGTH = 10;
+const CATEGORY_ALLOWED = /^[가-힣ㄱ-ㅎㅏ-ㅣa-zA-Z0-9 ]+$/;
+const CATEGORY_RESERVED = new Set(["모든 카테고리"]);
 
-export function SaveLinkModal({ open, onClose, categories, isLoggedIn, onSave }: Props) {
+function validateCategory(name: string): string | null {
+  const trimmed = name.replace(/ {2,}/g, " ").trim();
+  if (!trimmed) return null; // 빈 값은 선택 안 한 것
+  if (CATEGORY_RESERVED.has(trimmed)) return `"${trimmed}"는 사용할 수 없습니다.`;
+  if (trimmed.length > CATEGORY_MAX_LENGTH) return `카테고리 이름은 ${CATEGORY_MAX_LENGTH}자를 초과할 수 없습니다.`;
+  if (!CATEGORY_ALLOWED.test(trimmed)) return "카테고리 이름은 한글, 영어, 숫자, 띄어쓰기만 사용할 수 있습니다.";
+  return null;
+}
+
+export function SaveLinkModal({ open, onClose, categories, isLoggedIn, onSave, onAddCategory }: Props) {
   const [url, setUrl] = useState("");
   const [categoryValue, setCategoryValue] = useState<string | null>(null);
   const [memo, setMemo] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [categoryError, setCategoryError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -36,6 +50,7 @@ export function SaveLinkModal({ open, onClose, categories, isLoggedIn, onSave }:
       setCategoryValue(null);
       setMemo("");
       setError(null);
+      setCategoryError(null);
       setIsSubmitting(false);
       return;
     }
@@ -61,13 +76,25 @@ export function SaveLinkModal({ open, onClose, categories, isLoggedIn, onSave }:
       return;
     }
 
-    const rawCategory = categoryValue?.trim() ?? "";
+    const rawCategory = categoryValue?.trim().replace(/ {2,}/g, " ") ?? "";
     const normalizedCategory = rawCategory.length > 0 ? rawCategory : null;
     const normalizedMemo = memo.trim().length > 0 ? memo.trim() : null;
 
+    // 카테고리 검증
+    const catValidationError = normalizedCategory ? validateCategory(normalizedCategory) : null;
+    if (catValidationError) {
+      setCategoryError(catValidationError);
+      return;
+    }
+
     setError(null);
+    setCategoryError(null);
     setIsSubmitting(true);
     try {
+      // 새 카테고리면 먼저 생성
+      if (normalizedCategory && !categories.some((c) => c.name === normalizedCategory)) {
+        await onAddCategory(normalizedCategory);
+      }
       await onSave(normalizedUrl, normalizedCategory, normalizedMemo);
       onClose();
     } catch (saveError) {
@@ -122,22 +149,42 @@ export function SaveLinkModal({ open, onClose, categories, isLoggedIn, onSave }:
               <InputAdornment position="start">
                 <LinkIcon sx={{ color: "#2563eb", fontSize: 18 }} />
               </InputAdornment>
-            )
+            ),
+            endAdornment: url ? (
+              <InputAdornment position="end">
+                <IconButton size="small" onClick={() => setUrl("")} aria-label="URL 지우기" edge="end">
+                  <CloseIcon sx={{ fontSize: 18 }} />
+                </IconButton>
+              </InputAdornment>
+            ) : null,
           }}
           sx={{ mb: 2 }}
         />
 
         <Typography sx={{ fontSize: 13, color: "#64748b", mb: 0.75 }}>카테고리 (선택)</Typography>
         <Autocomplete
+          freeSolo
           disabled={!isLoggedIn}
           options={categories.map((c) => c.name)}
-          value={categoryValue}
-          onChange={(_, nextValue) => setCategoryValue(nextValue)}
-          noOptionsText="카테고리가 없습니다. 사이드바에서 먼저 추가해주세요."
+          value={categoryValue ?? ""}
+          onChange={(_, nextValue) => {
+            setCategoryValue(nextValue || null);
+            setCategoryError(null);
+          }}
+          onInputChange={(_, newInputValue, reason) => {
+            if (reason === "input") {
+              setCategoryValue(newInputValue || null);
+              setCategoryError(null);
+            }
+          }}
+          noOptionsText="직접 입력하여 새 카테고리를 만들 수 있습니다."
           renderInput={(params) => (
             <TextField
               {...params}
-              placeholder={isLoggedIn ? "카테고리 선택 (선택사항)" : "게스트 모드는 카테고리를 설정할 수 없습니다."}
+              placeholder={isLoggedIn ? "선택 또는 새 카테고리 입력" : "게스트 모드는 카테고리를 설정할 수 없습니다."}
+              error={Boolean(categoryError)}
+              helperText={categoryError ?? ` ${(categoryValue ?? "").length > 0 ? `${(categoryValue ?? "").trim().length}/${CATEGORY_MAX_LENGTH}` : ""}`}
+              slotProps={{ htmlInput: { ...params.inputProps, maxLength: CATEGORY_MAX_LENGTH } }}
             />
           )}
           sx={{ mb: 2 }}

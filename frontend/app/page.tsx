@@ -419,6 +419,7 @@ export default function HomePage() {
           categories={categoryState.categories}
           isLoggedIn={Boolean(sessionState.session)}
           onSave={articleState.handleCreate}
+          onAddCategory={categoryState.addCategory}
         />
         <LoginModal
           open={isLoginModalOpen}
