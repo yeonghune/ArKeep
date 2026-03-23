@@ -21,13 +21,14 @@ const PLACEHOLDER_SRC = "/thumbnail-placeholder.svg";
 type Props = {
   card: ArticleCard;
   categories: Category[];
+  isLoggedIn: boolean;
   isBusy?: boolean;
   onDelete: (card: ArticleCard) => Promise<void>;
   onUpdateCategory: (card: ArticleCard, category: string | null) => Promise<void>;
   onClick: () => void;
 };
 
-export const ArticleListItem = memo(function ArticleListItem({ card, categories, isBusy = false, onDelete, onUpdateCategory, onClick }: Props) {
+export const ArticleListItem = memo(function ArticleListItem({ card, categories, isLoggedIn, isBusy = false, onDelete, onUpdateCategory, onClick }: Props) {
   const [menuAnchorEl, setMenuAnchorEl] = useState<HTMLElement | null>(null);
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
   const [imgSrc, setImgSrc] = useState(card.thumbnailUrl ?? PLACEHOLDER_SRC);
@@ -147,12 +148,14 @@ export const ArticleListItem = memo(function ArticleListItem({ card, categories,
         onClick={(event) => event.stopPropagation()}
         PaperProps={{ elevation: 0, sx: { boxShadow: "0 2px 8px rgba(0,0,0,0.08)", border: "1px solid #e2e8f0", borderRadius: 1.5 } }}
       >
-        <MenuItem onClick={() => { setIsCategoryDialogOpen(true); closeMenu(); }}>
-          <ListItemIcon>
-            <DriveFileRenameOutlineIcon fontSize="small" />
-          </ListItemIcon>
-          카테고리 수정
-        </MenuItem>
+        {isLoggedIn && (
+          <MenuItem onClick={() => { setIsCategoryDialogOpen(true); closeMenu(); }}>
+            <ListItemIcon>
+              <DriveFileRenameOutlineIcon fontSize="small" />
+            </ListItemIcon>
+            카테고리 수정
+          </MenuItem>
+        )}
         <MenuItem
           disabled={isBusy}
           sx={{ color: "error.main" }}

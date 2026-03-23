@@ -131,10 +131,12 @@ export default function HomePage() {
       <CssBaseline />
       <Box sx={{ height: "100dvh", overflow: "hidden", display: "flex", flexDirection: "column", bgcolor: "background.default", color: "#1e293b" }}>
         {showSyncBanner ? (
-          <SyncBanner
-            onLoginClick={() => setIsLoginModalOpen(true)}
-            onDismiss={sessionState.dismissSyncBanner}
-          />
+          <Box sx={{ flexShrink: 0 }}>
+            <SyncBanner
+              onLoginClick={() => setIsLoginModalOpen(true)}
+              onDismiss={sessionState.dismissSyncBanner}
+            />
+          </Box>
         ) : null}
 
         <Box sx={{ flexShrink: 0, height: `${sidebarTopOffset}px` }} />
@@ -182,7 +184,7 @@ export default function HomePage() {
               overflow: "hidden",
             }}
           >
-            {/* 상단 고정 영역 (sticky): 검색바 + 타이틀바 */}
+            {/* 상단 고정 영역: 검색바 + 타이틀바 */}
             <Box
               sx={{
                 flexShrink: 0,
@@ -370,6 +372,7 @@ export default function HomePage() {
                           key={card.id}
                           card={card}
                           categories={categoryState.categories}
+                          isLoggedIn={Boolean(sessionState.session)}
                           isBusy={articleState.mutatingArticleId === card.id}
                           onDelete={articleState.handleDelete}
                           onUpdateCategory={articleState.handleUpdateCategory}
@@ -384,6 +387,7 @@ export default function HomePage() {
                           key={card.id}
                           card={card}
                           categories={categoryState.categories}
+                          isLoggedIn={Boolean(sessionState.session)}
                           isBusy={articleState.mutatingArticleId === card.id}
                           onDelete={articleState.handleDelete}
                           onUpdateCategory={articleState.handleUpdateCategory}
@@ -414,6 +418,7 @@ export default function HomePage() {
           open={isSaveModalOpen}
           onClose={() => setIsSaveModalOpen(false)}
           categories={categoryState.categories}
+          isLoggedIn={Boolean(sessionState.session)}
           onSave={articleState.handleCreate}
         />
         <LoginModal
