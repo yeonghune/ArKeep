@@ -1,3 +1,4 @@
+import React from "react";
 import AddIcon from "@mui/icons-material/Add";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
@@ -94,7 +95,9 @@ export function SidebarFilters({
   const [avatarLoadFailed, setAvatarLoadFailed] = useState(false);
   const [catMenu, setCatMenu] = useState<{ catId: number; anchor: HTMLElement } | null>(null);
   const [isAddingInline, setIsAddingInline] = useState(false);
+  const [addValue, setAddValue] = useState("");
   const [renamingCatId, setRenamingCatId] = useState<number | null>(null);
+  const [renameValue, setRenameValue] = useState("");
   const [addError, setAddError] = useState("");
   const isSubmittingAdd = useRef(false);
   const [renameError, setRenameError] = useState("");
@@ -128,9 +131,8 @@ export function SidebarFilters({
 
   async function handleAddCategory() {
     if (isSubmittingAdd.current) return;
-    const raw = addInputRef.current?.value ?? "";
-    const normalized = raw.replace(/ {2,}/g, " ").trim();
-    if (!normalized) { setIsAddingInline(false); setAddError(""); return; }
+    const normalized = addValue.replace(/ {2,}/g, " ").trim();
+    if (!normalized) { setIsAddingInline(false); setAddValue(""); setAddError(""); return; }
     const err = validateCatName(normalized);
     if (err) { setAddError(err); return; }
     isSubmittingAdd.current = true;
@@ -138,6 +140,7 @@ export function SidebarFilters({
     try {
       await onAddCategory(normalized);
       setIsAddingInline(false);
+      setAddValue("");
     } catch (e) {
       setAddError(e instanceof Error ? e.message : "이미 존재하는 카테고리입니다.");
     } finally {
@@ -146,8 +149,7 @@ export function SidebarFilters({
   }
 
   async function handleRenameCategory(id: number) {
-    const raw = renameInputRef.current?.value ?? "";
-    const normalized = raw.replace(/ {2,}/g, " ").trim();
+    const normalized = renameValue.replace(/ {2,}/g, " ").trim();
     if (!normalized) { setRenamingCatId(null); setRenameError(""); return; }
     const err = validateCatName(normalized);
     if (err) { setRenameError(err); return; }
@@ -159,6 +161,7 @@ export function SidebarFilters({
         onCategoryChange(updated.name);
       }
       setRenamingCatId(null);
+      setRenameValue("");
     } catch (e) {
       setRenameError(e instanceof Error ? e.message : "이미 존재하는 카테고리입니다.");
     } finally {
@@ -305,16 +308,23 @@ export function SidebarFilters({
                 component="input"
                 autoFocus
                 ref={addInputRef}
+                value={addValue}
                 inputMode="text"
                 enterKeyHint="done"
-                onChange={(e) => {
-                  if (e.target.value.length > CAT_MAX_LENGTH) e.target.value = e.target.value.slice(0, CAT_MAX_LENGTH);
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                  const v = e.target.value;
+                  setAddValue(v.length > CAT_MAX_LENGTH ? v.slice(0, CAT_MAX_LENGTH) : v);
+                  setAddError("");
                 }}
-                onKeyDown={(e) => {
+                onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
                   if (e.key === "Enter") void handleAddCategory();
-                  if (e.key === "Escape") { setIsAddingInline(false); setAddError(""); }
+                  if (e.key === "Escape") { setIsAddingInline(false); setAddValue(""); setAddError(""); }
                 }}
-                onBlur={() => { if (!isSubmittingAdd.current) { setIsAddingInline(false); setAddError(""); } }}
+                onBlur={() => {
+                  setTimeout(() => {
+                    if (!isSubmittingAdd.current) { setIsAddingInline(false); setAddValue(""); setAddError(""); }
+                  }, 150);
+                }}
                 placeholder="새 카테고리"
                 sx={{
                   flex: 1, border: "none", outline: "none", bgcolor: "transparent",
@@ -355,17 +365,23 @@ export function SidebarFilters({
                     component="input"
                     autoFocus
                     ref={renameInputRef}
-                    defaultValue={cat.name}
+                    value={renameValue}
                     inputMode="text"
                     enterKeyHint="done"
-                    onChange={(e) => {
-                      if (e.target.value.length > CAT_MAX_LENGTH) e.target.value = e.target.value.slice(0, CAT_MAX_LENGTH);
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                      const v = e.target.value;
+                      setRenameValue(v.length > CAT_MAX_LENGTH ? v.slice(0, CAT_MAX_LENGTH) : v);
+                      setRenameError("");
                     }}
-                    onKeyDown={(e) => {
+                    onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
                       if (e.key === "Enter") void handleRenameCategory(cat.id);
-                      if (e.key === "Escape") { setRenamingCatId(null); setRenameError(""); }
+                      if (e.key === "Escape") { setRenamingCatId(null); setRenameValue(""); setRenameError(""); }
                     }}
-                    onBlur={() => { if (!isSubmittingRename.current) { setRenamingCatId(null); setRenameError(""); } }}
+                    onBlur={() => {
+                      setTimeout(() => {
+                        if (!isSubmittingRename.current) { setRenamingCatId(null); setRenameValue(""); setRenameError(""); }
+                      }, 150);
+                    }}
                     sx={{
                       flex: 1, border: "none", outline: "none", bgcolor: "transparent",
                       fontSize: 13, color: "#1e293b", fontFamily: "inherit",
@@ -418,6 +434,7 @@ export function SidebarFilters({
                   onClick={(e) => {
                     e.stopPropagation();
                     setRenamingCatId(cat.id);
+                    setRenameValue(cat.name);
                     setCatMenu(null);
                   }}
                   sx={{ fontSize: 13 }}
