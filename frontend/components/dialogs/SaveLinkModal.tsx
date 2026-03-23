@@ -122,7 +122,14 @@ export function SaveLinkModal({ open, onClose, categories, isLoggedIn, onSave }:
               <InputAdornment position="start">
                 <LinkIcon sx={{ color: "#2563eb", fontSize: 18 }} />
               </InputAdornment>
-            )
+            ),
+            endAdornment: url ? (
+              <InputAdornment position="end">
+                <IconButton size="small" onClick={() => setUrl("")} aria-label="URL 지우기" edge="end">
+                  <CloseIcon sx={{ fontSize: 18 }} />
+                </IconButton>
+              </InputAdornment>
+            ) : null,
           }}
           sx={{ mb: 2 }}
         />
