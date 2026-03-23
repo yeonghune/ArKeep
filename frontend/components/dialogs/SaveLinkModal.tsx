@@ -17,12 +17,13 @@ type Props = {
   open: boolean;
   onClose: () => void;
   categories: Category[];
+  isLoggedIn: boolean;
   onSave: (url: string, category?: string | null, description?: string | null) => Promise<void>;
 };
 
 const URL_PATTERN = /^https?:\/\/.+/i;
 
-export function SaveLinkModal({ open, onClose, categories, onSave }: Props) {
+export function SaveLinkModal({ open, onClose, categories, isLoggedIn, onSave }: Props) {
   const [url, setUrl] = useState("");
   const [categoryValue, setCategoryValue] = useState<string | null>(null);
   const [memo, setMemo] = useState("");
@@ -107,11 +108,17 @@ export function SaveLinkModal({ open, onClose, categories, onSave }: Props) {
 
         <Typography sx={{ fontSize: 13, color: "#64748b", mb: 0.75 }}>카테고리 (선택)</Typography>
         <Autocomplete
+          disabled={!isLoggedIn}
           options={categories.map((c) => c.name)}
           value={categoryValue}
           onChange={(_, nextValue) => setCategoryValue(nextValue)}
           noOptionsText="카테고리가 없습니다. 사이드바에서 먼저 추가해주세요."
-          renderInput={(params) => <TextField {...params} placeholder="카테고리 선택 (선택사항)" />}
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              placeholder={isLoggedIn ? "카테고리 선택 (선택사항)" : "게스트 모드는 카테고리를 설정할 수 없습니다."}
+            />
+          )}
           sx={{ mb: 2 }}
         />
 
