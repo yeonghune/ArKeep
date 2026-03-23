@@ -129,7 +129,7 @@ export default function HomePage() {
   return (
     <ThemeProvider theme={HOME_THEME}>
       <CssBaseline />
-      <Box sx={{ minHeight: "100vh", bgcolor: "background.default", color: "#1e293b" }}>
+      <Box sx={{ height: "100dvh", overflow: "hidden", display: "flex", flexDirection: "column", bgcolor: "background.default", color: "#1e293b" }}>
         {showSyncBanner ? (
           <SyncBanner
             onLoginClick={() => setIsLoginModalOpen(true)}
@@ -137,9 +137,9 @@ export default function HomePage() {
           />
         ) : null}
 
-        <Box sx={{ height: `${sidebarTopOffset}px` }} />
+        <Box sx={{ flexShrink: 0, height: `${sidebarTopOffset}px` }} />
 
-        <Box sx={{ display: "flex" }}>
+        <Box sx={{ display: "flex", flex: 1, minHeight: 0 }}>
           {/* 사이드바 공간 확보 */}
           <Box
             sx={{
@@ -176,14 +176,16 @@ export default function HomePage() {
               flex: 1,
               minWidth: 0,
               bgcolor: "#ffffff",
-              minHeight: "100vh",
+              height: "100%",
+              display: "flex",
+              flexDirection: "column",
+              overflow: "hidden",
             }}
           >
             {/* 상단 고정 영역 (sticky): 검색바 + 타이틀바 */}
             <Box
               sx={{
-                position: "sticky",
-                top: `${sidebarTopOffset}px`,
+                flexShrink: 0,
                 zIndex: 10,
                 bgcolor: "#ffffff",
               }}
@@ -324,7 +326,7 @@ export default function HomePage() {
             </Box>
 
             {/* 콘텐츠 영역 */}
-            <Box sx={{ px: { xs: 2, sm: 3, lg: 4 }, pt: 2, pb: 3 }}>
+            <Box sx={{ flex: 1, overflowY: "auto", px: { xs: 2, sm: 3, lg: 4 }, pt: 2, pb: 3 }}>
 
               {combinedError ? (
                 <Alert severity="error" sx={{ mb: 2 }}>
