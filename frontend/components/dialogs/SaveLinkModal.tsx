@@ -37,7 +37,21 @@ export function SaveLinkModal({ open, onClose, categories, isLoggedIn, onSave }:
       setMemo("");
       setError(null);
       setIsSubmitting(false);
+      return;
     }
+
+    (async () => {
+      try {
+        await navigator.permissions.query({ name: "clipboard-read" as PermissionName });
+        const text = await navigator.clipboard.readText();
+        const trimmed = text.trim();
+        if (URL_PATTERN.test(trimmed)) {
+          setUrl(trimmed);
+        }
+      } catch {
+        // 권한 거부 또는 미지원 브라우저
+      }
+    })();
   }, [open]);
 
   async function handleSave() {
@@ -91,8 +105,15 @@ export function SaveLinkModal({ open, onClose, categories, isLoggedIn, onSave }:
         <Typography sx={{ fontSize: 13, color: "#64748b", mb: 0.75 }}>URL 주소</Typography>
         <TextField
           fullWidth
+          autoFocus
           value={url}
           onChange={(event) => setUrl(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" && !isSubmitting) {
+              event.preventDefault();
+              void handleSave();
+            }
+          }}
           placeholder="https://example.com/article"
           error={Boolean(error)}
           helperText={error ?? " "}
