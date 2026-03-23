@@ -181,6 +181,7 @@ export default function HomePage() {
               display: "flex",
               flexDirection: "column",
               overflow: "hidden",
+              contain: "layout paint style",
             }}
           >
             {/* 상단 고정 영역: 검색바 + 타이틀바 */}
