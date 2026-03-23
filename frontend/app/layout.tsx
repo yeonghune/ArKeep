@@ -9,7 +9,8 @@ export const metadata: Metadata = {
     icon: "/icon.svg",
     shortcut: "/icon.svg",
     apple: "/icon.svg"
-  }
+  },
+  viewport: "width=device-width, initial-scale=1, viewport-fit=cover",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
