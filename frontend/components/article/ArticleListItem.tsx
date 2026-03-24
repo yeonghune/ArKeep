@@ -1,7 +1,9 @@
 import { memo, useState } from "react";
+import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import DriveFileRenameOutlineIcon from "@mui/icons-material/DriveFileRenameOutline";
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
+import RadioButtonUncheckedIcon from "@mui/icons-material/RadioButtonUnchecked";
 import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
@@ -24,11 +26,13 @@ type Props = {
   isLoggedIn: boolean;
   isBusy?: boolean;
   onDelete: (card: ArticleCard) => Promise<void>;
+  onToggleRead: (card: ArticleCard) => Promise<void>;
   onUpdateCategory: (card: ArticleCard, category: string | null) => Promise<void>;
+  onAddCategory: (name: string) => Promise<Category>;
   onClick: () => void;
 };
 
-export const ArticleListItem = memo(function ArticleListItem({ card, categories, isLoggedIn, isBusy = false, onDelete, onUpdateCategory, onClick }: Props) {
+export const ArticleListItem = memo(function ArticleListItem({ card, categories, isLoggedIn, isBusy = false, onDelete, onToggleRead, onUpdateCategory, onAddCategory, onClick }: Props) {
   const [menuAnchorEl, setMenuAnchorEl] = useState<HTMLElement | null>(null);
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
   const [imgSrc, setImgSrc] = useState(card.thumbnailUrl ?? PLACEHOLDER_SRC);
@@ -147,25 +151,42 @@ export const ArticleListItem = memo(function ArticleListItem({ card, categories,
         onClose={closeMenu}
         onClick={(event) => event.stopPropagation()}
         PaperProps={{ elevation: 0, sx: { boxShadow: "0 2px 8px rgba(0,0,0,0.08)", border: "1px solid #e2e8f0", borderRadius: 1.5 } }}
+        MenuListProps={{ dense: true }}
       >
+        <MenuItem
+          disabled={isBusy}
+          sx={{ fontSize: 13 }}
+          onClick={() => {
+            closeMenu();
+            void onToggleRead(card);
+          }}
+        >
+          <ListItemIcon>
+            {card.isRead
+              ? <RadioButtonUncheckedIcon sx={{ fontSize: 16 }} />
+              : <CheckCircleOutlineIcon sx={{ fontSize: 16 }} />
+            }
+          </ListItemIcon>
+          {card.isRead ? "미열람으로 표시" : "열람으로 표시"}
+        </MenuItem>
         {isLoggedIn && (
-          <MenuItem onClick={() => { setIsCategoryDialogOpen(true); closeMenu(); }}>
+          <MenuItem onClick={() => { setIsCategoryDialogOpen(true); closeMenu(); }} sx={{ fontSize: 13 }}>
             <ListItemIcon>
-              <DriveFileRenameOutlineIcon fontSize="small" />
+              <DriveFileRenameOutlineIcon sx={{ fontSize: 16 }} />
             </ListItemIcon>
             카테고리 수정
           </MenuItem>
         )}
         <MenuItem
           disabled={isBusy}
-          sx={{ color: "error.main" }}
+          sx={{ color: "error.main", fontSize: 13 }}
           onClick={() => {
             closeMenu();
             void onDelete(card);
           }}
         >
           <ListItemIcon>
-            <DeleteOutlineIcon fontSize="small" color="error" />
+            <DeleteOutlineIcon sx={{ fontSize: 16 }} color="error" />
           </ListItemIcon>
           삭제
         </MenuItem>
@@ -177,6 +198,7 @@ export const ArticleListItem = memo(function ArticleListItem({ card, categories,
         categories={availableCategories}
         isBusy={isBusy}
         onClose={() => setIsCategoryDialogOpen(false)}
+        onAddCategory={onAddCategory}
         onSave={async (category) => {
           try {
             await onUpdateCategory(card, category);

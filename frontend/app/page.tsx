@@ -162,7 +162,10 @@ export default function HomePage() {
             onCategoryChange={filterState.setSelectedCategory}
             onAddCategory={categoryState.addCategory}
             onRenameCategory={categoryState.renameCategory}
-            onDeleteCategory={categoryState.removeCategory}
+            onDeleteCategory={async (id) => {
+              await categoryState.removeCategory(id);
+              await articleState.refresh();
+            }}
             isLoggedIn={Boolean(sessionState.session)}
             userName={sessionState.session?.name ?? sessionState.session?.email}
             userEmail={sessionState.session?.email}
@@ -374,7 +377,9 @@ export default function HomePage() {
                           isLoggedIn={Boolean(sessionState.session)}
                           isBusy={articleState.mutatingArticleId === card.id}
                           onDelete={articleState.handleDelete}
+                          onToggleRead={articleState.handleToggleRead}
                           onUpdateCategory={articleState.handleUpdateCategory}
+                          onAddCategory={categoryState.addCategory}
                           onClick={() => articleState.setSelectedCard(card)}
                         />
                       ))}
@@ -389,7 +394,9 @@ export default function HomePage() {
                           isLoggedIn={Boolean(sessionState.session)}
                           isBusy={articleState.mutatingArticleId === card.id}
                           onDelete={articleState.handleDelete}
+                          onToggleRead={articleState.handleToggleRead}
                           onUpdateCategory={articleState.handleUpdateCategory}
+                          onAddCategory={categoryState.addCategory}
                           onClick={() => articleState.setSelectedCard(card)}
                         />
                       ))}
@@ -427,7 +434,7 @@ export default function HomePage() {
           onGoogleCredential={(idToken) => sessionState.handleGoogleCredential(idToken, afterAuthChange)}
         />
         <OnboardingDialog
-          open={!sessionState.session && !isOnboardingDismissed}
+          open={sessionState.isHydrated && !sessionState.session && !isOnboardingDismissed}
           onGuestContinue={() => setIsOnboardingDismissed(true)}
           onGoogleCredential={(idToken) => sessionState.handleGoogleCredential(idToken, afterAuthChange).then(() => setIsOnboardingDismissed(true))}
         />

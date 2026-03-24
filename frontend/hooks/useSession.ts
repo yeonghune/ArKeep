@@ -19,6 +19,7 @@ function parseErrorMessage(error: unknown): string {
 
 export type UseSessionReturn = {
   session: Session | null;
+  isHydrated: boolean;
   showSyncBanner: boolean;
   isMigrationDialogOpen: boolean;
   guestMigrationCount: number;
@@ -34,6 +35,7 @@ export type UseSessionReturn = {
 
 export function useSession(): UseSessionReturn {
   const [session, setSession] = useState<Session | null>(null);
+  const [isHydrated, setIsHydrated] = useState(false);
   const [isSyncBannerDismissed, setIsSyncBannerDismissed] = useState(false);
   const [isMigrationDialogOpen, setIsMigrationDialogOpen] = useState(false);
   const [guestMigrationCount, setGuestMigrationCount] = useState(0);
@@ -60,6 +62,7 @@ export function useSession(): UseSessionReturn {
   // 초기 세션 로드
   useEffect(() => {
     setSession(getStoredSession());
+    setIsHydrated(true);
     void syncSessionProfile();
   }, [syncSessionProfile]);
 
@@ -70,7 +73,7 @@ export function useSession(): UseSessionReturn {
     return () => window.removeEventListener(sessionChangedEventName(), handler);
   }, []);
 
-  const showSyncBanner = !session && !isSyncBannerDismissed;
+  const showSyncBanner = isHydrated && !session && !isSyncBannerDismissed;
 
   const dismissSyncBanner = useCallback(() => setIsSyncBannerDismissed(true), []);
 
@@ -134,6 +137,7 @@ export function useSession(): UseSessionReturn {
 
   return {
     session,
+    isHydrated,
     showSyncBanner,
     isMigrationDialogOpen,
     guestMigrationCount,
