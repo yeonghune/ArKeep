@@ -263,6 +263,11 @@ export default function HomePage() {
                         <SearchIcon sx={{ fontSize: 16, color: "#94a3b8" }} />
                       </InputAdornment>
                     ),
+                    endAdornment: filterState.isSearchPending ? (
+                      <InputAdornment position="end">
+                        <CircularProgress size={12} thickness={5} sx={{ color: "#94a3b8" }} />
+                      </InputAdornment>
+                    ) : null,
                   },
                 }}
               />

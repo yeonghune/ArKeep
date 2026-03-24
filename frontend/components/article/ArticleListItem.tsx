@@ -1,5 +1,6 @@
 import { memo, useState } from "react";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import DriveFileRenameOutlineIcon from "@mui/icons-material/DriveFileRenameOutline";
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
@@ -170,13 +171,25 @@ export const ArticleListItem = memo(function ArticleListItem({ card, categories,
           {card.isRead ? "미열람으로 표시" : "열람으로 표시"}
         </MenuItem>
         {isLoggedIn && (
-          <MenuItem onClick={() => { setIsCategoryDialogOpen(true); closeMenu(); }} sx={{ fontSize: 13 }}>
+          <MenuItem disabled={isBusy} onClick={() => { setIsCategoryDialogOpen(true); closeMenu(); }} sx={{ fontSize: 13 }}>
             <ListItemIcon>
               <DriveFileRenameOutlineIcon sx={{ fontSize: 16 }} />
             </ListItemIcon>
             카테고리 수정
           </MenuItem>
         )}
+        <MenuItem
+          sx={{ fontSize: 13 }}
+          onClick={() => {
+            void navigator.clipboard.writeText(card.url);
+            closeMenu();
+          }}
+        >
+          <ListItemIcon>
+            <ContentCopyIcon sx={{ fontSize: 16 }} />
+          </ListItemIcon>
+          URL 복사
+        </MenuItem>
         <MenuItem
           disabled={isBusy}
           sx={{ color: "error.main", fontSize: 13 }}

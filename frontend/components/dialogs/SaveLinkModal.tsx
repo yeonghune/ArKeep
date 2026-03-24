@@ -138,10 +138,10 @@ export function SaveLinkModal({ open, onClose, categories, isLoggedIn, onSave, o
           fullWidth
           autoFocus
           value={url}
-          onChange={(event) => setUrl(event.target.value)}
+          onChange={(event) => { setUrl(event.target.value); if (error) setError(null); }}
           placeholder="https://example.com/article"
           error={Boolean(error)}
-          helperText={error ?? " "}
+          helperText={error ?? (isSubmitting ? "URL 정보를 가져오는 중..." : " ")}
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
@@ -181,7 +181,7 @@ export function SaveLinkModal({ open, onClose, categories, isLoggedIn, onSave, o
               {...params}
               placeholder={isLoggedIn ? "선택 또는 새 카테고리 입력" : "게스트 모드는 카테고리를 설정할 수 없습니다."}
               error={Boolean(categoryError)}
-              helperText={categoryError ?? ` ${(categoryValue ?? "").length > 0 ? `${(categoryValue ?? "").trim().length}/${CATEGORY_MAX_LENGTH}` : ""}`}
+              helperText={categoryError ?? ((categoryValue ?? "").length > 0 ? `${(categoryValue ?? "").trim().length}/${CATEGORY_MAX_LENGTH}자` : "한글, 영어, 숫자, 띄어쓰기만 허용")}
               slotProps={{ htmlInput: { ...params.inputProps, maxLength: CATEGORY_MAX_LENGTH } }}
             />
           )}
