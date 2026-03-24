@@ -118,7 +118,11 @@ export function SaveLinkModal({ open, onClose, categories, isLoggedIn, onSave, o
         }
       }}
     >
-      <Box sx={{ p: { xs: 2, sm: 3 } }}>
+      <Box
+        component="form"
+        onSubmit={(e) => { e.preventDefault(); void handleSave(); }}
+        sx={{ p: { xs: 2, sm: 3 } }}
+      >
         <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 2 }}>
           <Box>
             <Typography sx={{ fontSize: 30, fontWeight: 700, lineHeight: 1.1 }}>링크 저장</Typography>
@@ -135,12 +139,6 @@ export function SaveLinkModal({ open, onClose, categories, isLoggedIn, onSave, o
           autoFocus
           value={url}
           onChange={(event) => setUrl(event.target.value)}
-          onKeyDown={(event) => {
-            if (event.key === "Enter" && !isSubmitting) {
-              event.preventDefault();
-              void handleSave();
-            }
-          }}
           placeholder="https://example.com/article"
           error={Boolean(error)}
           helperText={error ?? " "}
@@ -205,7 +203,7 @@ export function SaveLinkModal({ open, onClose, categories, isLoggedIn, onSave, o
           <Button onClick={onClose} color="inherit" sx={{ px: 2.5, fontWeight: 700 }} disabled={isSubmitting}>
             취소
           </Button>
-          <Button variant="contained" sx={{ px: 2.5, fontWeight: 700 }} onClick={() => void handleSave()} disabled={isSubmitting}>
+          <Button type="submit" variant="contained" sx={{ px: 2.5, fontWeight: 700 }} disabled={isSubmitting}>
             {isSubmitting ? "저장 중..." : "저장"}
           </Button>
         </Stack>

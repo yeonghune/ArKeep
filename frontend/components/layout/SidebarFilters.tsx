@@ -429,6 +429,7 @@ export function SidebarFilters({
                 onClose={() => setCatMenu(null)}
                 onClick={(e) => e.stopPropagation()}
                 PaperProps={{ elevation: 0, sx: { boxShadow: "0 2px 8px rgba(0,0,0,0.08)", border: "1px solid #e2e8f0", borderRadius: 1.5 } }}
+                MenuListProps={{ dense: true }}
               >
                 <MenuItem
                   onClick={(e) => {
@@ -437,7 +438,7 @@ export function SidebarFilters({
                     setRenameValue(cat.name);
                     setCatMenu(null);
                   }}
-                  sx={{ fontSize: 13 }}
+                  sx={{ fontSize: 13, py: 0.75 }}
                 >
                   <ListItemIcon><DriveFileRenameOutlineIcon sx={{ fontSize: 16 }} /></ListItemIcon>
                   <ListItemText primary="수정" primaryTypographyProps={{ fontSize: 13 }} />
@@ -450,7 +451,7 @@ export function SidebarFilters({
                     });
                     setCatMenu(null);
                   }}
-                  sx={{ color: "#ef4444", fontSize: 13 }}
+                  sx={{ color: "#ef4444", fontSize: 13, py: 0.75 }}
                 >
                   <ListItemIcon><DeleteOutlineIcon sx={{ fontSize: 16, color: "#ef4444" }} /></ListItemIcon>
                   <ListItemText primary="삭제" primaryTypographyProps={{ fontSize: 13 }} />
