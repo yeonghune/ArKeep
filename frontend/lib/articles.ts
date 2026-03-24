@@ -153,7 +153,7 @@ async function createLocalArticle(input: CreateArticleInput): Promise<ArticleCar
     ? customDescription
     : preview?.description?.trim()
       ? preview.description.trim()
-      : "Saved for later";
+      : "";
   const thumbnailUrl = preview?.imageUrl ?? null;
 
   return {
@@ -287,7 +287,7 @@ export async function patchArticle(id: number, input: UpdateArticleInput): Promi
         ...current,
         isRead: typeof input.isRead === "boolean" ? input.isRead : current.isRead,
         category: input.category === undefined ? current.category : normalizeCategory(input.category),
-        description: input.description === undefined ? current.description : input.description?.trim() || "Saved for later"
+        description: input.description === undefined ? current.description : (input.description?.trim() ?? "")
       };
 
       const updated = [...local];

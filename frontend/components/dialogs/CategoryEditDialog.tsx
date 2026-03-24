@@ -114,7 +114,7 @@ export function CategoryEditDialog({ open, card, categories, isBusy, onClose, on
                 placeholder="선택 또는 새 이름 입력"
                 fullWidth
                 error={Boolean(categoryError)}
-                helperText={categoryError ?? ` ${(categoryValue ?? "").length > 0 ? `${(categoryValue ?? "").trim().length}/${CATEGORY_MAX_LENGTH}` : ""}`}
+                helperText={categoryError ?? ((categoryValue ?? "").length > 0 ? `${(categoryValue ?? "").trim().length}/${CATEGORY_MAX_LENGTH}자` : "한글, 영어, 숫자, 띄어쓰기만 허용")}
                 slotProps={{ htmlInput: { ...params.inputProps, maxLength: CATEGORY_MAX_LENGTH } }}
                 sx={{ mt: 1 }}
               />

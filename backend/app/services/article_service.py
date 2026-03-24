@@ -28,7 +28,7 @@ from app.schemas.article import (
 from app.services.auth_service import AppException
 from app.services.og_extractor import extract_og_metadata
 
-DEFAULT_DESCRIPTION = "Saved for later"
+DEFAULT_DESCRIPTION = ""
 MAX_PAGE_SIZE = 8
 
 
@@ -80,8 +80,7 @@ class ArticleService:
         # Extract metadata
         meta = await extract_og_metadata(body.url)
         title = (meta["title"] or body.url)[:500]
-        description = body.description or meta["description"] or DEFAULT_DESCRIPTION
-        description = description[:1000]
+        description = (body.description or DEFAULT_DESCRIPTION)[:1000]
         thumbnail_url = meta["image_url"]
         if thumbnail_url:
             thumbnail_url = thumbnail_url[:2048]

@@ -196,7 +196,15 @@ export function LoginModal({ open, onClose, onGoogleCredential }: Props) {
 
           <Box
             ref={buttonContainerRef}
-            sx={{ display: "grid", justifyContent: "center", width: "100%", maxWidth: `${googleButtonWidth}px`, mx: "auto" }}
+            sx={{
+              display: "grid",
+              justifyContent: "center",
+              width: "100%",
+              maxWidth: `${googleButtonWidth}px`,
+              mx: "auto",
+              opacity: isBusy ? 0.5 : 1,
+              pointerEvents: isBusy ? "none" : "auto",
+            }}
           />
         </Box>
       </Box>
