@@ -1,5 +1,5 @@
+import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
-import BookmarkIcon from "@mui/icons-material/Bookmark";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Dialog from "@mui/material/Dialog";
@@ -79,6 +79,10 @@ export function LoginModal({ open, onClose, onGoogleCredential }: Props) {
   const [googleButtonWidth, setGoogleButtonWidth] = useState(320);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isBusy, setIsBusy] = useState(false);
+  const onCloseRef = useRef(onClose);
+  const onGoogleCredentialRef = useRef(onGoogleCredential);
+  useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
+  useEffect(() => { onGoogleCredentialRef.current = onGoogleCredential; }, [onGoogleCredential]);
 
   useEffect(() => {
     if (!open) {
@@ -110,9 +114,9 @@ export function LoginModal({ open, onClose, onGoogleCredential }: Props) {
               return;
             }
             setIsBusy(true);
-            void onGoogleCredential(credential)
+            void onGoogleCredentialRef.current(credential)
               .then(() => {
-                onClose();
+                onCloseRef.current();
               })
               .catch((error: unknown) => {
                 const message = error instanceof Error ? error.message : "Google 로그인에 실패했습니다.";
@@ -147,7 +151,7 @@ export function LoginModal({ open, onClose, onGoogleCredential }: Props) {
       cancelled = true;
       window.google?.accounts?.id.cancel();
     };
-  }, [open, onClose, onGoogleCredential]);
+  }, [open]);
 
   return (
     <Dialog
@@ -166,19 +170,8 @@ export function LoginModal({ open, onClose, onGoogleCredential }: Props) {
     >
       <Box sx={{ p: { xs: 3, sm: 5 } }}>
         <Box sx={{ borderRadius: 4, bgcolor: "white", p: { xs: 3, sm: 5 }, textAlign: "center", border: "1px solid #e2e8f0" }}>
-          <Box
-            sx={{
-              width: 72,
-              height: 72,
-              mx: "auto",
-              mb: 3,
-              borderRadius: 3,
-              bgcolor: "#e2e8f0",
-              display: "grid",
-              placeItems: "center"
-            }}
-          >
-            <BookmarkIcon sx={{ color: "#1976d2", fontSize: 38 }} />
+          <Box sx={{ mx: "auto", mb: 3, width: 72, height: 72 }}>
+            <Image src="/icon.svg" alt="ArKeep" width={72} height={72} />
           </Box>
 
           <Typography sx={{ fontSize: 30, fontWeight: 700, color: "#111827", lineHeight: 1.15, mb: 1.5 }}>계정 연결</Typography>
