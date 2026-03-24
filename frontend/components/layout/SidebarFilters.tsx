@@ -256,14 +256,14 @@ export function SidebarFilters({
           <Box sx={{ display: "flex", alignItems: "center" }}>
             <IconButton
               size="small"
-              onClick={() => { setIsSearchingInline(true); setCatSearchQuery(""); }}
+              onClick={() => { setIsAddingInline(false); setAddValue(""); setAddError(""); setIsSearchingInline(true); setCatSearchQuery(""); }}
               sx={{ p: 0.25, color: isSearchingInline ? SELECTED_COLOR : "#94a3b8", "&:hover": { bgcolor: SELECTED_BG, color: SELECTED_COLOR } }}
             >
               <SearchIcon sx={{ fontSize: 16 }} />
             </IconButton>
             <IconButton
               size="small"
-              onClick={() => { setIsAddingInline(true); }}
+              onClick={() => { setIsSearchingInline(false); setCatSearchQuery(""); setIsAddingInline(true); }}
               sx={{ p: 0.25, color: "#94a3b8", "&:hover": { bgcolor: SELECTED_BG, color: SELECTED_COLOR } }}
             >
               <AddIcon sx={{ fontSize: 16 }} />
