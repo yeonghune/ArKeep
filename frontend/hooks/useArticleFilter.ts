@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from "react";
 import type { ArticleFilter, ArticleSort } from "@/types";
 
 const SEARCH_DEBOUNCE_MS = 300;
+const SORT_KEY = "arkeep_sort";
 
 function toIsReadParam(filter: ArticleFilter): boolean | undefined {
   if (filter === "all") return undefined;
@@ -13,6 +14,7 @@ export type ArticleFilterState = {
   sort: ArticleSort;
   searchInput: string;
   searchQuery: string;
+  isSearchPending: boolean;
   selectedCategory: string;
   page: number;
   isReadParam: boolean | undefined;
@@ -29,6 +31,11 @@ export type ArticleFilterActions = {
 export function useArticleFilter(): ArticleFilterState & ArticleFilterActions {
   const [filter, setFilterRaw] = useState<ArticleFilter>("unread");
   const [sort, setSortRaw] = useState<ArticleSort>("latest");
+
+  useLayoutEffect(() => {
+    const saved = localStorage.getItem(SORT_KEY);
+    if (saved === "latest" || saved === "oldest") setSortRaw(saved);
+  }, []);
   const [searchInput, setSearchInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategoryRaw] = useState("");
@@ -52,6 +59,7 @@ export function useArticleFilter(): ArticleFilterState & ArticleFilterActions {
   const setSort = useCallback((value: ArticleSort) => {
     setSortRaw(value);
     setPage(1);
+    localStorage.setItem(SORT_KEY, value);
   }, []);
 
   const setSelectedCategory = useCallback((value: string) => {
@@ -60,12 +68,14 @@ export function useArticleFilter(): ArticleFilterState & ArticleFilterActions {
   }, []);
 
   const isReadParam = useMemo(() => toIsReadParam(filter), [filter]);
+  const isSearchPending = searchInput.trim() !== searchQuery;
 
   return {
     filter,
     sort,
     searchInput,
     searchQuery,
+    isSearchPending,
     selectedCategory,
     page,
     isReadParam,
