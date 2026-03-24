@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { getBootstrapPromise } from "@/lib/api";
 import { loginWithGoogle, logout } from "@/lib/auth";
 import { getMyProfile } from "@/lib/profile";
 import {
@@ -59,11 +60,15 @@ export function useSession(): UseSessionReturn {
     }
   }, []);
 
-  // 초기 세션 로드
+  // 초기 세션 로드 — refresh 시도 완료 후 isHydrated를 true로 올려
+  // 온보딩/SyncBanner가 로그인 미확인 상태에서 flash되지 않도록 함
   useEffect(() => {
-    setSession(getStoredSession());
-    setIsHydrated(true);
-    void syncSessionProfile();
+    void (async () => {
+      await getBootstrapPromise();
+      setSession(getStoredSession());
+      setIsHydrated(true);
+      void syncSessionProfile();
+    })();
   }, [syncSessionProfile]);
 
   // 세션 변경 이벤트 리스너
