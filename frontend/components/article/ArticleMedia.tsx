@@ -1,11 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Box from "@mui/material/Box";
 import type { ArticleCard } from "@/types";
 
 const PLACEHOLDER_SRC = "/thumbnail-placeholder.svg";
 
 export function ArticleMedia({ card }: { card: ArticleCard }) {
-  const [src, setSrc] = useState(card.thumbnailUrl ?? PLACEHOLDER_SRC);
+  const [src, setSrc] = useState(card.thumbnailUrl || PLACEHOLDER_SRC);
+
+  useEffect(() => {
+    setSrc(card.thumbnailUrl || PLACEHOLDER_SRC);
+  }, [card.thumbnailUrl]);
 
   return (
     <Box
