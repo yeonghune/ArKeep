@@ -57,6 +57,8 @@ export function OnboardingDialog({ open, onGuestContinue, onGoogleCredential }: 
   const [googleButtonWidth, setGoogleButtonWidth] = useState(280);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isBusy, setIsBusy] = useState(false);
+  const onGoogleCredentialRef = useRef(onGoogleCredential);
+  useEffect(() => { onGoogleCredentialRef.current = onGoogleCredential; }, [onGoogleCredential]);
 
   useEffect(() => {
     if (!open) return;
@@ -84,7 +86,7 @@ export function OnboardingDialog({ open, onGuestContinue, onGoogleCredential }: 
               return;
             }
             setIsBusy(true);
-            void onGoogleCredential(credential)
+            void onGoogleCredentialRef.current(credential)
               .catch((error: unknown) => {
                 const message = error instanceof Error ? error.message : "Google 로그인에 실패했습니다.";
                 setErrorMessage(message);
@@ -118,7 +120,7 @@ export function OnboardingDialog({ open, onGuestContinue, onGoogleCredential }: 
       cancelled = true;
       window.google?.accounts?.id.cancel();
     };
-  }, [open, onGoogleCredential]);
+  }, [open]);
 
   return (
     <Dialog
