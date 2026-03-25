@@ -74,19 +74,37 @@ class ArticleResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
-class ArticlePageResponse(BaseModel):
+class ArticleCursorResponse(BaseModel):
     items: list[ArticleResponse]
-    page: int
-    size: int
-    totalItems: int
-    totalPages: int
+    nextCursor: str | None
     hasNext: bool
-    hasPrevious: bool
+    totalItems: int
 
 
-class ArticleFacetsResponse(BaseModel):
-    categories: list[str]
-    domains: list[str]
+
+class BulkFilter(BaseModel):
+    isRead: Optional[bool] = None
+    category: Optional[str] = None
+    q: Optional[str] = None
+    searchField: Optional[str] = None
+
+
+class BulkUpdateRequest(BaseModel):
+    ids: list[int] = []
+    selectAll: bool = False
+    filters: Optional[BulkFilter] = None
+    isRead: Optional[bool] = None
+    category: Optional[str] = None
+
+
+class BulkDeleteRequest(BaseModel):
+    ids: list[int] = []
+    selectAll: bool = False
+    filters: Optional[BulkFilter] = None
+
+
+class BulkActionResponse(BaseModel):
+    affected: int
 
 
 class MigrationItem(BaseModel):

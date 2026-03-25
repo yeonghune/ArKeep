@@ -1,5 +1,6 @@
 export type ArticleSort = "latest" | "oldest";
 export type ArticleFilter = "all" | "read" | "unread";
+export type ArticleSearchField = "title" | "url";
 
 export type ArticleCard = {
   id: number;
@@ -14,16 +15,10 @@ export type ArticleCard = {
   createdAt: string;
 };
 
-export type ArticlePage = {
+export type ArticleCursorPage = {
   items: ArticleCard[];
-  page: number;
-  size: number;
-  totalItems: number;
-  totalPages: number;
+  nextCursor: string | null;
   hasNext: boolean;
-  hasPrevious: boolean;
+  totalItems: number;
 };
 
-export type ArticleFacets = {
-  categories: string[];
-};

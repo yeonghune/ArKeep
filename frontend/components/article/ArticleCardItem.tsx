@@ -8,6 +8,7 @@ import RadioButtonUncheckedIcon from "@mui/icons-material/RadioButtonUnchecked";
 import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
+import Checkbox from "@mui/material/Checkbox";
 import Chip from "@mui/material/Chip";
 import IconButton from "@mui/material/IconButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
@@ -27,6 +28,9 @@ type Props = {
   categories: Category[];
   isLoggedIn: boolean;
   isBusy?: boolean;
+  isBulkMode?: boolean;
+  isSelected?: boolean;
+  onSelect?: (id: number) => void;
   onDelete: (card: ArticleCard) => Promise<void>;
   onToggleRead: (card: ArticleCard) => Promise<void>;
   onUpdateCategory: (card: ArticleCard, category: string | null) => Promise<void>;
@@ -34,9 +38,10 @@ type Props = {
   onClick: () => void;
 };
 
-export const ArticleCardItem = memo(function ArticleCardItem({ card, categories, isLoggedIn, isBusy = false, onDelete, onToggleRead, onUpdateCategory, onAddCategory, onClick }: Props) {
+export const ArticleCardItem = memo(function ArticleCardItem({ card, categories, isLoggedIn, isBusy = false, isBulkMode = false, isSelected = false, onSelect, onDelete, onToggleRead, onUpdateCategory, onAddCategory, onClick }: Props) {
   const [menuAnchorEl, setMenuAnchorEl] = useState<HTMLElement | null>(null);
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
   const isRead = card.isRead;
   const statusLabel = isRead ? "열람" : "미열람";
   const categoryLabel = getCategoryLabel(card.category);
@@ -52,28 +57,40 @@ export const ArticleCardItem = memo(function ArticleCardItem({ card, categories,
     closeMenu();
   }
 
+  const handleCardClick = () => {
+    if (isBulkMode) {
+      onSelect?.(card.id);
+    } else {
+      onClick();
+    }
+  };
+
+  const showCheckbox = isHovered || isBulkMode || isSelected;
+
   return (
     <>
       <Card
         role="button"
         tabIndex={0}
-        onClick={onClick}
+        onClick={handleCardClick}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
         onKeyDown={(event) => {
           if (event.key === "Enter" || event.key === " ") {
             event.preventDefault();
-            onClick();
+            handleCardClick();
           }
         }}
         sx={{
           display: "flex",
           flexDirection: "column",
-          border: "1px solid #e2e8f0",
+          border: isSelected ? "2px solid #2563eb" : "1px solid #e2e8f0",
           borderRadius: "4px",
           boxShadow: "0 1px 2px rgba(15, 23, 42, 0.06)",
           overflow: "hidden",
           opacity: isRead ? 0.8 : 1,
           cursor: "pointer",
-          transition: "transform 160ms ease, box-shadow 160ms ease",
+          transition: "transform 160ms ease, box-shadow 160ms ease, border-color 120ms ease",
           "&:hover": {
             transform: "translateY(-2px)",
             boxShadow: "0 8px 24px rgba(15, 23, 42, 0.12)"
@@ -93,6 +110,27 @@ export const ArticleCardItem = memo(function ArticleCardItem({ card, categories,
               color: "white",
               fontWeight: 700,
               bgcolor: isRead ? "#475569" : "#2563eb"
+            }}
+          />
+          {/* 벌크 체크박스 */}
+          <Checkbox
+            checked={isSelected}
+            onClick={(e) => {
+              e.stopPropagation();
+              onSelect?.(card.id);
+            }}
+            size="small"
+            sx={{
+              position: "absolute",
+              top: 4,
+              right: 4,
+              color: "white",
+              opacity: showCheckbox ? 1 : 0,
+              transition: "opacity 140ms ease",
+              bgcolor: "rgba(0,0,0,0.25)",
+              borderRadius: "4px",
+              p: 0.5,
+              "&.Mui-checked": { color: "#2563eb", bgcolor: "white" },
             }}
           />
         </Box>

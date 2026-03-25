@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import CloseIcon from "@mui/icons-material/Close";
 import LinkIcon from "@mui/icons-material/Link";
 import Autocomplete from "@mui/material/Autocomplete";
@@ -37,6 +37,7 @@ function validateCategory(name: string): string | null {
 }
 
 export function SaveLinkModal({ open, onClose, categories, isLoggedIn, onSave, onAddCategory }: Props) {
+  const urlInputRef = useRef<HTMLInputElement>(null);
   const [url, setUrl] = useState("");
   const [categoryValue, setCategoryValue] = useState<string | null>(null);
   const [memo, setMemo] = useState("");
@@ -111,6 +112,7 @@ export function SaveLinkModal({ open, onClose, categories, isLoggedIn, onSave, o
       onClose={onClose}
       maxWidth="md"
       fullWidth
+      TransitionProps={{ onEntered: () => urlInputRef.current?.focus() }}
       PaperProps={{
         sx: {
           borderRadius: 3,
@@ -136,7 +138,7 @@ export function SaveLinkModal({ open, onClose, categories, isLoggedIn, onSave, o
         <Typography sx={{ fontSize: 13, color: "#64748b", mb: 0.75 }}>URL 주소</Typography>
         <TextField
           fullWidth
-          autoFocus
+          inputRef={urlInputRef}
           value={url}
           onChange={(event) => { setUrl(event.target.value); if (error) setError(null); }}
           placeholder="https://example.com/article"
