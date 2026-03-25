@@ -6,6 +6,7 @@ import DriveFileRenameOutlineIcon from "@mui/icons-material/DriveFileRenameOutli
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 import RadioButtonUncheckedIcon from "@mui/icons-material/RadioButtonUnchecked";
 import Box from "@mui/material/Box";
+import Checkbox from "@mui/material/Checkbox";
 import IconButton from "@mui/material/IconButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import Menu from "@mui/material/Menu";
@@ -26,6 +27,9 @@ type Props = {
   categories: Category[];
   isLoggedIn: boolean;
   isBusy?: boolean;
+  isBulkMode?: boolean;
+  isSelected?: boolean;
+  onSelect?: (id: number) => void;
   onDelete: (card: ArticleCard) => Promise<void>;
   onToggleRead: (card: ArticleCard) => Promise<void>;
   onUpdateCategory: (card: ArticleCard, category: string | null) => Promise<void>;
@@ -33,10 +37,11 @@ type Props = {
   onClick: () => void;
 };
 
-export const ArticleListItem = memo(function ArticleListItem({ card, categories, isLoggedIn, isBusy = false, onDelete, onToggleRead, onUpdateCategory, onAddCategory, onClick }: Props) {
+export const ArticleListItem = memo(function ArticleListItem({ card, categories, isLoggedIn, isBusy = false, isBulkMode = false, isSelected = false, onSelect, onDelete, onToggleRead, onUpdateCategory, onAddCategory, onClick }: Props) {
   const [menuAnchorEl, setMenuAnchorEl] = useState<HTMLElement | null>(null);
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
   const [imgSrc, setImgSrc] = useState(card.thumbnailUrl ?? PLACEHOLDER_SRC);
+  const [isHovered, setIsHovered] = useState(false);
   const isRead = card.isRead;
   const categoryLabel = getCategoryLabel(card.category);
   const categoryColor = getCategoryColor(card.category);
@@ -46,6 +51,16 @@ export const ArticleListItem = memo(function ArticleListItem({ card, categories,
 
   const closeMenu = () => setMenuAnchorEl(null);
 
+  const handleRowClick = () => {
+    if (isBulkMode) {
+      onSelect?.(card.id);
+    } else {
+      onClick();
+    }
+  };
+
+  const showCheckbox = isHovered || isBulkMode || isSelected;
+
   return (
     <>
       <Stack
@@ -54,11 +69,13 @@ export const ArticleListItem = memo(function ArticleListItem({ card, categories,
         spacing={1.5}
         role="button"
         tabIndex={0}
-        onClick={onClick}
+        onClick={handleRowClick}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
         onKeyDown={(event) => {
           if (event.key === "Enter" || event.key === " ") {
             event.preventDefault();
-            onClick();
+            handleRowClick();
           }
         }}
         sx={{
@@ -66,15 +83,34 @@ export const ArticleListItem = memo(function ArticleListItem({ card, categories,
           py: 1.5,
           cursor: "pointer",
           opacity: isRead ? 0.7 : 1,
+          bgcolor: isSelected ? "rgba(37,99,235,0.06)" : "transparent",
           borderBottom: "1px solid #e2e8f0",
           width: "100%",
           minWidth: 0,
           overflow: "hidden",
           "&:last-child": { borderBottom: "none" },
-          "&:hover": { bgcolor: "rgba(0,0,0,0.02)" },
+          "&:hover": { bgcolor: isSelected ? "rgba(37,99,235,0.1)" : "rgba(0,0,0,0.02)" },
           transition: "background-color 120ms ease"
         }}
       >
+        {/* 벌크 체크박스 (썸네일 왼쪽) */}
+        <Box
+          sx={{
+            width: 24,
+            flexShrink: 0,
+            opacity: showCheckbox ? 1 : 0,
+            transition: "opacity 140ms ease",
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <Checkbox
+            checked={isSelected}
+            onChange={() => onSelect?.(card.id)}
+            size="small"
+            sx={{ p: 0 }}
+          />
+        </Box>
+
         {/* 썸네일 */}
         <Box
           component="img"

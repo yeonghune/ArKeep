@@ -4,7 +4,6 @@ Mirrors Java ArticleService exactly (1-based pages, search on title, etc.).
 """
 
 import datetime
-import math
 import uuid
 from urllib.parse import urlparse
 
@@ -16,11 +15,14 @@ from app.models.article import Article
 from app.models.category import Category
 from app.models.user import User
 from app.schemas.article import (
-    ArticleFacetsResponse,
+    ArticleCursorResponse,
     ArticleMigrationRequest,
     ArticleMigrationResponse,
-    ArticlePageResponse,
     ArticleResponse,
+    BulkActionResponse,
+    BulkDeleteRequest,
+    BulkFilter,
+    BulkUpdateRequest,
     CreateArticleRequest,
     MigrationItem,
     UpdateArticleRequest,
@@ -53,6 +55,27 @@ def _to_response(article: Article) -> ArticleResponse:
         isRead=article.is_read,
         createdAt=article.created_at,
     )
+
+
+async def _apply_bulk_filters(db: AsyncSession, stmt, user_id: int, filters: "BulkFilter | None"):
+    """SELECT 문에 bulk 필터 조건을 적용합니다."""
+    if filters is None:
+        return stmt
+    if filters.isRead is not None:
+        stmt = stmt.where(Article.is_read == filters.isRead)
+    if filters.q:
+        if filters.searchField == "url":
+            stmt = stmt.where(func.lower(Article.url).contains(filters.q.lower()))
+        else:
+            stmt = stmt.where(func.lower(Article.title).contains(filters.q.lower()))
+    if filters.category:
+        cat_result = await db.execute(
+            select(Category).where(Category.user_id == user_id, Category.name == filters.category)
+        )
+        cat = cat_result.scalar_one_or_none()
+        cat_id = cat.id if cat else None
+        stmt = stmt.where(Article.category_id == cat_id)
+    return stmt
 
 
 async def _resolve_category_id(db: AsyncSession, user_id: int, name: str | None) -> int | None:
@@ -117,43 +140,51 @@ class ArticleService:
         is_read: bool | None,
         sort: str | None,
         query: str | None,
+        search_field: str | None,
         category: str | None,
         domain: str | None,
-        page: int,
+        cursor: str | None,
         size: int,
-    ) -> ArticlePageResponse:
-        size = min(size, MAX_PAGE_SIZE)
-        page = max(page, 1)
+    ) -> ArticleCursorResponse:
+        size = min(size, 50)
 
         stmt = select(Article).where(Article.user_id == user.id)
         if is_read is not None:
             stmt = stmt.where(Article.is_read == is_read)
         if query:
-            stmt = stmt.where(func.lower(Article.title).contains(query.lower()))
+            if search_field == "url":
+                stmt = stmt.where(func.lower(Article.url).contains(query.lower()))
+            else:
+                stmt = stmt.where(func.lower(Article.title).contains(query.lower()))
         if category:
             cat_id = await _resolve_category_id(self.db, user.id, category)
             stmt = stmt.where(Article.category_id == cat_id)
         if domain:
             stmt = stmt.where(Article.domain == domain)
 
-        # Count
         count_stmt = select(func.count()).select_from(stmt.subquery())
         total: int = (await self.db.execute(count_stmt)).scalar_one()
 
-        total_pages = math.ceil(total / size) if total > 0 else 0
+        if cursor is not None:
+            cursor_id = int(cursor)
+            if sort == "oldest":
+                stmt = stmt.where(Article.id > cursor_id)
+            else:
+                stmt = stmt.where(Article.id < cursor_id)
 
-        order = asc(Article.created_at) if sort == "oldest" else desc(Article.created_at)
-        stmt = stmt.order_by(order).offset((page - 1) * size).limit(size)
-        rows = (await self.db.execute(stmt)).scalars().all()
+        order = asc(Article.id) if sort == "oldest" else desc(Article.id)
+        stmt = stmt.order_by(order).limit(size + 1)
+        rows = list((await self.db.execute(stmt)).scalars().all())
 
-        return ArticlePageResponse(
-            items=[_to_response(a) for a in rows],
-            page=page,
-            size=size,
+        has_next = len(rows) > size
+        items = rows[:size]
+        next_cursor = str(items[-1].id) if has_next and items else None
+
+        return ArticleCursorResponse(
+            items=[_to_response(a) for a in items],
+            nextCursor=next_cursor,
+            hasNext=has_next,
             totalItems=total,
-            totalPages=total_pages,
-            hasNext=page < total_pages,
-            hasPrevious=page > 1,
         )
 
     async def update(self, user: User, article_id: int, body: UpdateArticleRequest) -> ArticleResponse:
@@ -175,6 +206,44 @@ class ArticleService:
         await self.db.refresh(article)
         return _to_response(article)
 
+    async def bulk_update(self, user: User, body: BulkUpdateRequest) -> BulkActionResponse:
+        stmt = select(Article).where(Article.user_id == user.id)
+
+        if body.selectAll:
+            stmt = await _apply_bulk_filters(self.db, stmt, user.id, body.filters)
+        else:
+            if not body.ids:
+                return BulkActionResponse(affected=0)
+            stmt = stmt.where(Article.id.in_(body.ids))
+
+        rows = list((await self.db.execute(stmt)).scalars().all())
+
+        for article in rows:
+            if body.isRead is not None:
+                article.is_read = body.isRead
+            if body.category is not None:
+                article.category_id = await _resolve_category_id(self.db, user.id, body.category or None)
+
+        await self.db.commit()
+        return BulkActionResponse(affected=len(rows))
+
+    async def bulk_delete(self, user: User, body: BulkDeleteRequest) -> BulkActionResponse:
+        stmt = select(Article).where(Article.user_id == user.id)
+
+        if body.selectAll:
+            stmt = await _apply_bulk_filters(self.db, stmt, user.id, body.filters)
+        else:
+            if not body.ids:
+                return BulkActionResponse(affected=0)
+            stmt = stmt.where(Article.id.in_(body.ids))
+
+        rows = list((await self.db.execute(stmt)).scalars().all())
+
+        for article in rows:
+            await self.db.delete(article)
+        await self.db.commit()
+        return BulkActionResponse(affected=len(rows))
+
     async def delete(self, user: User, article_id: int) -> None:
         result = await self.db.execute(
             select(Article).where(Article.id == article_id, Article.user_id == user.id)
@@ -184,24 +253,6 @@ class ArticleService:
             raise AppException(404, "NOT_FOUND", "Article not found")
         await self.db.delete(article)
         await self.db.commit()
-
-    async def facets(self, user: User) -> ArticleFacetsResponse:
-        cat_stmt = (
-            select(Category.name)
-            .join(Article, Article.category_id == Category.id)
-            .where(Article.user_id == user.id)
-            .distinct()
-            .order_by(asc(Category.name))
-        )
-        dom_stmt = (
-            select(Article.domain)
-            .where(Article.user_id == user.id)
-            .distinct()
-            .order_by(asc(Article.domain))
-        )
-        categories = list((await self.db.execute(cat_stmt)).scalars().all())
-        domains = list((await self.db.execute(dom_stmt)).scalars().all())
-        return ArticleFacetsResponse(categories=categories, domains=domains)
 
     async def migrate(self, user: User, body: ArticleMigrationRequest) -> ArticleMigrationResponse:
         total = len(body.items)

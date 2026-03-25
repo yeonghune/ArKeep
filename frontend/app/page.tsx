@@ -1,27 +1,34 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AddIcon from "@mui/icons-material/Add";
+import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
+import CloseIcon from "@mui/icons-material/Close";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import DriveFileRenameOutlineIcon from "@mui/icons-material/DriveFileRenameOutline";
 import GridViewIcon from "@mui/icons-material/GridView";
 import MenuIcon from "@mui/icons-material/Menu";
+import RadioButtonUncheckedIcon from "@mui/icons-material/RadioButtonUnchecked";
 import SearchIcon from "@mui/icons-material/Search";
 import SortIcon from "@mui/icons-material/Sort";
+import TuneIcon from "@mui/icons-material/Tune";
 import ViewListIcon from "@mui/icons-material/ViewList";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
+import Checkbox from "@mui/material/Checkbox";
 import CircularProgress from "@mui/material/CircularProgress";
 import CssBaseline from "@mui/material/CssBaseline";
+import Divider from "@mui/material/Divider";
 import IconButton from "@mui/material/IconButton";
 import InputAdornment from "@mui/material/InputAdornment";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
-import Divider from "@mui/material/Divider";
-import Pagination from "@mui/material/Pagination";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
+import Tooltip from "@mui/material/Tooltip";
 import { ThemeProvider } from "@mui/material/styles";
 import Typography from "@mui/material/Typography";
 import { HOME_THEME } from "@/constants/theme";
@@ -56,6 +63,10 @@ const OnboardingDialog = dynamic(
   () => import("@/components/dialogs/OnboardingDialog").then((m) => ({ default: m.OnboardingDialog })),
   { ssr: false }
 );
+const BulkCategoryDialog = dynamic(
+  () => import("@/components/dialogs/BulkCategoryDialog").then((m) => ({ default: m.BulkCategoryDialog })),
+  { ssr: false }
+);
 
 export default function HomePage() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -64,6 +75,13 @@ export default function HomePage() {
   const [isOnboardingDismissed, setIsOnboardingDismissed] = useState(false);
   const [viewMenuAnchor, setViewMenuAnchor] = useState<HTMLElement | null>(null);
   const [sortMenuAnchor, setSortMenuAnchor] = useState<HTMLElement | null>(null);
+  const [searchFieldMenuAnchor, setSearchFieldMenuAnchor] = useState<HTMLElement | null>(null);
+  // 벌크 모드
+  const [isBulkMode, setIsBulkMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [selectAllMode, setSelectAllMode] = useState(false); // 전체(DB) 선택 모드
+  const [isTitleIconHovered, setIsTitleIconHovered] = useState(false);
+  const [isBulkCategoryOpen, setIsBulkCategoryOpen] = useState(false);
   const [viewMode, setViewMode] = useViewMode();
   const filterState = useArticleFilter();
   const articleState = useArticles({ ...filterState });
@@ -71,6 +89,54 @@ export default function HomePage() {
   const categoryState = useCategories(Boolean(sessionState.session));
 
   const { showSyncBanner } = sessionState;
+
+  const exitBulkMode = useCallback(() => {
+    setIsBulkMode(false);
+    setSelectedIds(new Set());
+    setSelectAllMode(false);
+  }, []);
+
+  const toggleSelect = useCallback((id: number) => {
+    setIsBulkMode(true);
+    setSelectAllMode(false); // 개별 선택 시 전체 모드 해제
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  // selectAllMode 중 무한 스크롤로 새 아티클이 로드되면 자동 선택
+  useEffect(() => {
+    if (!selectAllMode) return;
+    setSelectedIds(new Set(articleState.articles.map((a) => a.id)));
+  }, [selectAllMode, articleState.articles]);
+
+  const isAllSelected =
+    selectAllMode ||
+    (articleState.articles.length > 0 &&
+      selectedIds.size === articleState.articles.length);
+
+  const handleSelectAll = useCallback(() => {
+    if (selectAllMode || isAllSelected) {
+      // 전체 해제
+      setSelectAllMode(false);
+      setSelectedIds(new Set());
+    } else {
+      // 타이틀바 체크박스 → selectAllMode 진입 (DB 전체 선택)
+      setSelectAllMode(true);
+      setSelectedIds(new Set(articleState.articles.map((a) => a.id)));
+    }
+  }, [selectAllMode, isAllSelected, articleState.articles]);
+
+
+  async function handleBulkDeleteClick() {
+    const count = selectAllMode ? articleState.totalItems : selectedIds.size;
+    if (!window.confirm(`선택된 ${count}개의 아티클을 삭제할까요?`)) return;
+    await articleState.handleBulkDelete(Array.from(selectedIds), selectAllMode);
+    exitBulkMode();
+  }
 
   const sidebarTopOffset = useMemo(
     () => showSyncBanner ? SYNC_BANNER_HEIGHT : 0,
@@ -87,10 +153,24 @@ export default function HomePage() {
     return () => mq.removeEventListener("change", sync);
   }, []);
 
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const loadMoreRef = useRef(articleState.loadMore);
+  loadMoreRef.current = articleState.loadMore;
+
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+    const observer = new IntersectionObserver(
+      (entries) => { if (entries[0].isIntersecting) loadMoreRef.current(); },
+      { rootMargin: "300px", threshold: 0 }
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [articleState.isLoading]);
+
   const afterAuthChange = useCallback(async () => {
-    filterState.setPage(1);
     await articleState.refresh();
-  }, [filterState, articleState]);
+  }, [articleState]);
 
   const selectedCardBusy =
     articleState.selectedCard != null &&
@@ -251,6 +331,9 @@ export default function HomePage() {
                 placeholder="검색"
                 value={filterState.searchInput}
                 onChange={(e) => filterState.setSearchInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Escape") filterState.setSearchInput("");
+                }}
                 sx={{
                   flex: { xs: 1, sm: "0 1 400px" },
                   "& .MuiInputBase-root": { height: "30px", bgcolor: "#f8fafc" },
@@ -263,14 +346,61 @@ export default function HomePage() {
                         <SearchIcon sx={{ fontSize: 16, color: "#94a3b8" }} />
                       </InputAdornment>
                     ),
-                    endAdornment: filterState.isSearchPending ? (
-                      <InputAdornment position="end">
-                        <CircularProgress size={12} thickness={5} sx={{ color: "#94a3b8" }} />
+                    endAdornment: (
+                      <InputAdornment position="end" sx={{ gap: 0.25, mr: "-4px" }}>
+                        {filterState.isSearchPending ? (
+                          <CircularProgress size={12} thickness={5} sx={{ color: "#94a3b8" }} />
+                        ) : filterState.searchInput ? (
+                          <IconButton
+                            size="small"
+                            onClick={() => filterState.setSearchInput("")}
+                            sx={{ p: "2px", color: "#94a3b8", "&:hover": { color: "#475569" } }}
+                          >
+                            <CloseIcon sx={{ fontSize: 14 }} />
+                          </IconButton>
+                        ) : null}
+                        <IconButton
+                          size="small"
+                          onClick={(e) => setSearchFieldMenuAnchor(e.currentTarget)}
+                          sx={{
+                            p: "2px",
+                            color: filterState.searchField === "url" ? "primary.main" : "#94a3b8",
+                            "&:hover": { color: filterState.searchField === "url" ? "primary.dark" : "#475569" },
+                          }}
+                        >
+                          <TuneIcon sx={{ fontSize: 14 }} />
+                        </IconButton>
                       </InputAdornment>
-                    ) : null,
+                    ),
                   },
                 }}
               />
+              <Menu
+                anchorEl={searchFieldMenuAnchor}
+                open={Boolean(searchFieldMenuAnchor)}
+                onClose={() => setSearchFieldMenuAnchor(null)}
+                anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+                transformOrigin={{ vertical: "top", horizontal: "right" }}
+                slotProps={{ paper: { sx: { mt: 0.5, minWidth: 160 } } }}
+              >
+                <Typography sx={{ px: 2, py: 0.75, fontSize: "0.7rem", color: "#94a3b8", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                  검색 범위
+                </Typography>
+                <MenuItem
+                  selected={filterState.searchField === "title"}
+                  onClick={() => { filterState.setSearchField("title"); setSearchFieldMenuAnchor(null); }}
+                  sx={{ fontSize: "0.85rem", gap: 1 }}
+                >
+                  제목
+                </MenuItem>
+                <MenuItem
+                  selected={filterState.searchField === "url"}
+                  onClick={() => { filterState.setSearchField("url"); setSearchFieldMenuAnchor(null); }}
+                  sx={{ fontSize: "0.85rem", gap: 1 }}
+                >
+                  URL
+                </MenuItem>
+              </Menu>
 
               <Box sx={{ flex: 1, display: { xs: "none", sm: "block" } }} />
 
@@ -290,46 +420,134 @@ export default function HomePage() {
                 <Stack direction="row" spacing={1} alignItems="center">
                   {(() => {
                     const current = FILTER_ITEMS.find((f) => f.value === filterState.filter);
+                    const showCheck = isTitleIconHovered || isBulkMode;
                     return (
                       <>
-                        <Box sx={{ display: "flex", color: "#64748b" }}>{current?.icon}</Box>
-                        <Typography sx={{ fontSize: 14, fontWeight: 500, whiteSpace: "nowrap" }}>
-                          {filterState.selectedCategory || "모든 카테고리"}
-                        </Typography>
+                        <Box
+                          onMouseEnter={() => setIsTitleIconHovered(true)}
+                          onMouseLeave={() => setIsTitleIconHovered(false)}
+                          sx={{ display: "flex", alignItems: "center", justifyContent: "center", width: 20, height: 20, color: "#64748b", cursor: "pointer", flexShrink: 0 }}
+                        >
+                          {showCheck ? (
+                            <Checkbox
+                              size="small"
+                              checked={isAllSelected}
+                              indeterminate={selectedIds.size > 0 && !isAllSelected}
+                              onChange={() => {
+                                if (!isBulkMode) setIsBulkMode(true);
+                                handleSelectAll();
+                              }}
+                              onClick={(e) => e.stopPropagation()}
+                              sx={{ p: 0, width: 20, height: 20 }}
+                            />
+                          ) : (
+                            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", width: 20, height: 20, color: "#64748b" }}>{current?.icon}</Box>
+                          )}
+                        </Box>
+                        {!isBulkMode && (
+                          <Typography sx={{ fontSize: 14, fontWeight: 500, whiteSpace: "nowrap" }}>
+                            {filterState.selectedCategory || "모든 카테고리"}
+                          </Typography>
+                        )}
                       </>
                     );
                   })()}
                   <Typography sx={{ fontSize: 14, fontWeight: 400, color: "#64748b", whiteSpace: "nowrap" }}>
-                    {articleState.totalItems}개
+                    {isBulkMode
+                      ? selectAllMode
+                        ? `전체 ${articleState.totalItems}개 선택`
+                        : `${selectedIds.size}개 선택`
+                      : `${articleState.totalItems}개`}
                   </Typography>
                 </Stack>
 
-                <Stack direction="row" spacing={0.5} alignItems="center" sx={{ mr: "-5px" }}>
-                  <IconButton size="small" onClick={(e) => setSortMenuAnchor(e.currentTarget)} sx={{ color: "#64748b" }}>
-                    <SortIcon fontSize="small" />
-                  </IconButton>
-                  <Menu anchorEl={sortMenuAnchor} open={Boolean(sortMenuAnchor)} onClose={() => setSortMenuAnchor(null)} PaperProps={{ elevation: 0, sx: { boxShadow: "0 2px 8px rgba(0,0,0,0.08)", border: "1px solid #e2e8f0", borderRadius: 1.5 } }}>
-                    <MenuItem selected={filterState.sort === "latest"} onClick={() => { filterState.setSort("latest"); setSortMenuAnchor(null); }} sx={{ fontSize: 13 }}>
-                      최신순
-                    </MenuItem>
-                    <MenuItem selected={filterState.sort === "oldest"} onClick={() => { filterState.setSort("oldest"); setSortMenuAnchor(null); }} sx={{ fontSize: 13 }}>
-                      오래된순
-                    </MenuItem>
-                  </Menu>
-                  <IconButton size="small" onClick={(e) => setViewMenuAnchor(e.currentTarget)}>
-                    {viewMode === "card" ? <GridViewIcon fontSize="small" /> : <ViewListIcon fontSize="small" />}
-                  </IconButton>
-                  <Menu anchorEl={viewMenuAnchor} open={Boolean(viewMenuAnchor)} onClose={() => setViewMenuAnchor(null)} PaperProps={{ elevation: 0, sx: { boxShadow: "0 2px 8px rgba(0,0,0,0.08)", border: "1px solid #e2e8f0", borderRadius: 1.5 } }}>
-                    <MenuItem selected={viewMode === "card"} onClick={() => { setViewMode("card"); setViewMenuAnchor(null); }} sx={{ fontSize: 13 }}>
-                      <ListItemIcon><GridViewIcon sx={{ fontSize: 16 }} /></ListItemIcon>
-                      카드형
-                    </MenuItem>
-                    <MenuItem selected={viewMode === "list"} onClick={() => { setViewMode("list"); setViewMenuAnchor(null); }} sx={{ fontSize: 13 }}>
-                      <ListItemIcon><ViewListIcon sx={{ fontSize: 16 }} /></ListItemIcon>
-                      리스트형
-                    </MenuItem>
-                  </Menu>
-                </Stack>
+                {isBulkMode ? (
+                  <Stack direction="row" spacing={0.75} alignItems="center">
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      disabled={selectedIds.size === 0 && !selectAllMode}
+                      onClick={async () => {
+                        await articleState.handleBulkToggleRead(Array.from(selectedIds), true, selectAllMode);
+                        exitBulkMode();
+                      }}
+                      startIcon={<CheckCircleOutlineIcon fontSize="small" />}
+                      sx={{ fontSize: 12, fontWeight: 500, whiteSpace: "nowrap", borderColor: "#cbd5e1", color: "#475569", "&:hover": { borderColor: "#94a3b8", bgcolor: "#f8fafc" } }}
+                    >
+                      열람 처리
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      disabled={selectedIds.size === 0 && !selectAllMode}
+                      onClick={async () => {
+                        await articleState.handleBulkToggleRead(Array.from(selectedIds), false, selectAllMode);
+                        exitBulkMode();
+                      }}
+                      startIcon={<RadioButtonUncheckedIcon fontSize="small" />}
+                      sx={{ fontSize: 12, fontWeight: 500, whiteSpace: "nowrap", borderColor: "#cbd5e1", color: "#475569", "&:hover": { borderColor: "#94a3b8", bgcolor: "#f8fafc" } }}
+                    >
+                      미열람 처리
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      disabled={selectedIds.size === 0 && !selectAllMode}
+                      onClick={() => setIsBulkCategoryOpen(true)}
+                      startIcon={<DriveFileRenameOutlineIcon fontSize="small" />}
+                      sx={{ fontSize: 12, fontWeight: 500, whiteSpace: "nowrap", borderColor: "#cbd5e1", color: "#475569", "&:hover": { borderColor: "#94a3b8", bgcolor: "#f8fafc" } }}
+                    >
+                      카테고리 수정
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      disabled={selectedIds.size === 0 && !selectAllMode}
+                      onClick={() => void handleBulkDeleteClick()}
+                      startIcon={<DeleteOutlineIcon fontSize="small" />}
+                      sx={{ fontSize: 12, fontWeight: 500, whiteSpace: "nowrap", borderColor: "#fca5a5", color: "error.main", "&:hover": { borderColor: "error.main", bgcolor: "#fff5f5" } }}
+                    >
+                      삭제
+                    </Button>
+                    <Divider orientation="vertical" flexItem sx={{ mx: 0.25, my: 0.5 }} />
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={exitBulkMode}
+                      startIcon={<CloseIcon fontSize="small" />}
+                      sx={{ fontSize: 12, fontWeight: 500, whiteSpace: "nowrap", borderColor: "#cbd5e1", color: "#64748b", "&:hover": { borderColor: "#94a3b8", bgcolor: "#f8fafc" } }}
+                    >
+                      취소
+                    </Button>
+                  </Stack>
+                ) : (
+                  <Stack direction="row" spacing={0.5} alignItems="center" sx={{ mr: "-5px" }}>
+                    <IconButton size="small" onClick={(e) => setSortMenuAnchor(e.currentTarget)} sx={{ color: "#64748b" }}>
+                      <SortIcon fontSize="small" />
+                    </IconButton>
+                    <Menu anchorEl={sortMenuAnchor} open={Boolean(sortMenuAnchor)} onClose={() => setSortMenuAnchor(null)} PaperProps={{ elevation: 0, sx: { boxShadow: "0 2px 8px rgba(0,0,0,0.08)", border: "1px solid #e2e8f0", borderRadius: 1.5 } }}>
+                      <MenuItem selected={filterState.sort === "latest"} onClick={() => { filterState.setSort("latest"); setSortMenuAnchor(null); }} sx={{ fontSize: 13 }}>
+                        최신순
+                      </MenuItem>
+                      <MenuItem selected={filterState.sort === "oldest"} onClick={() => { filterState.setSort("oldest"); setSortMenuAnchor(null); }} sx={{ fontSize: 13 }}>
+                        오래된순
+                      </MenuItem>
+                    </Menu>
+                    <IconButton size="small" onClick={(e) => setViewMenuAnchor(e.currentTarget)}>
+                      {viewMode === "card" ? <GridViewIcon fontSize="small" /> : <ViewListIcon fontSize="small" />}
+                    </IconButton>
+                    <Menu anchorEl={viewMenuAnchor} open={Boolean(viewMenuAnchor)} onClose={() => setViewMenuAnchor(null)} PaperProps={{ elevation: 0, sx: { boxShadow: "0 2px 8px rgba(0,0,0,0.08)", border: "1px solid #e2e8f0", borderRadius: 1.5 } }}>
+                      <MenuItem selected={viewMode === "card"} onClick={() => { setViewMode("card"); setViewMenuAnchor(null); }} sx={{ fontSize: 13 }}>
+                        <ListItemIcon><GridViewIcon sx={{ fontSize: 16 }} /></ListItemIcon>
+                        카드형
+                      </MenuItem>
+                      <MenuItem selected={viewMode === "list"} onClick={() => { setViewMode("list"); setViewMenuAnchor(null); }} sx={{ fontSize: 13 }}>
+                        <ListItemIcon><ViewListIcon sx={{ fontSize: 16 }} /></ListItemIcon>
+                        리스트형
+                      </MenuItem>
+                    </Menu>
+                  </Stack>
+                )}
               </Stack>
 
               <Divider />
@@ -381,6 +599,9 @@ export default function HomePage() {
                           categories={categoryState.categories}
                           isLoggedIn={Boolean(sessionState.session)}
                           isBusy={articleState.mutatingArticleId === card.id}
+                          isBulkMode={isBulkMode}
+                          isSelected={selectedIds.has(card.id)}
+                          onSelect={toggleSelect}
                           onDelete={articleState.handleDelete}
                           onToggleRead={articleState.handleToggleRead}
                           onUpdateCategory={articleState.handleUpdateCategory}
@@ -398,6 +619,9 @@ export default function HomePage() {
                           categories={categoryState.categories}
                           isLoggedIn={Boolean(sessionState.session)}
                           isBusy={articleState.mutatingArticleId === card.id}
+                          isBulkMode={isBulkMode}
+                          isSelected={selectedIds.has(card.id)}
+                          onSelect={toggleSelect}
                           onDelete={articleState.handleDelete}
                           onToggleRead={articleState.handleToggleRead}
                           onUpdateCategory={articleState.handleUpdateCategory}
@@ -408,17 +632,12 @@ export default function HomePage() {
                     </Box>
                   )}
 
-                  {articleState.totalPages > 1 ? (
-                    <Stack direction="row" justifyContent="center">
-                      <Pagination
-                        color="primary"
-                        shape="rounded"
-                        page={filterState.page}
-                        count={articleState.totalPages}
-                        onChange={(_, nextPage) => filterState.setPage(nextPage)}
-                      />
+                  <Box ref={sentinelRef} sx={{ height: 1 }} />
+                  {articleState.isLoadingMore && (
+                    <Stack direction="row" justifyContent="center" sx={{ py: 2 }}>
+                      <CircularProgress size={20} thickness={4} sx={{ color: "#94a3b8" }} />
                     </Stack>
-                  ) : null}
+                  )}
                 </Stack>
               )}
             </Box>
@@ -456,6 +675,18 @@ export default function HomePage() {
           onToggleRead={articleState.handleToggleRead}
           onSaveMemo={articleState.handleSaveMemo}
           isBusy={selectedCardBusy}
+        />
+        <BulkCategoryDialog
+          open={isBulkCategoryOpen}
+          categories={categoryState.categories}
+          selectedCount={selectedIds.size}
+          onClose={() => setIsBulkCategoryOpen(false)}
+          onAddCategory={categoryState.addCategory}
+          onSave={async (category) => {
+            await articleState.handleBulkUpdateCategory(Array.from(selectedIds), category, selectAllMode);
+            setIsBulkCategoryOpen(false);
+            exitBulkMode();
+          }}
         />
       </Box>
     </ThemeProvider>

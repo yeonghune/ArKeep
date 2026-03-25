@@ -7,11 +7,13 @@ from app.database import get_db
 from app.dependencies import get_current_user
 from app.models.user import User
 from app.schemas.article import (
-    ArticleFacetsResponse,
+    ArticleCursorResponse,
     ArticleMigrationRequest,
     ArticleMigrationResponse,
-    ArticlePageResponse,
     ArticleResponse,
+    BulkActionResponse,
+    BulkDeleteRequest,
+    BulkUpdateRequest,
     CreateArticleRequest,
     UpdateArticleRequest,
 )
@@ -29,37 +31,50 @@ async def create_article(
     return await ArticleService(db).create(current_user, body)
 
 
-@router.get("", response_model=ArticlePageResponse)
+@router.get("", response_model=ArticleCursorResponse)
 async def list_articles(
     isRead: Optional[bool] = Query(None),
     sort: Optional[str] = Query(None),
     q: Optional[str] = Query(None),
+    searchField: Optional[str] = Query(None),
     category: Optional[str] = Query(None),
     domain: Optional[str] = Query(None),
-    page: int = Query(1, ge=1),
-    size: int = Query(8, ge=1, le=8),
+    cursor: Optional[str] = Query(None),
+    size: int = Query(20, ge=1, le=50),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
-) -> ArticlePageResponse:
+) -> ArticleCursorResponse:
     return await ArticleService(db).list_articles(
         user=current_user,
         is_read=isRead,
         sort=sort,
         query=q,
+        search_field=searchField,
         category=category,
         domain=domain,
-        page=page,
+        cursor=cursor,
         size=size,
     )
 
 
-# IMPORTANT: /facets must be declared before /{id} to prevent route conflict
-@router.get("/facets", response_model=ArticleFacetsResponse)
-async def get_facets(
+
+# IMPORTANT: /bulk must be declared before /{id} to prevent route conflict
+@router.patch("/bulk", response_model=BulkActionResponse)
+async def bulk_update_articles(
+    body: BulkUpdateRequest,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
-) -> ArticleFacetsResponse:
-    return await ArticleService(db).facets(current_user)
+) -> BulkActionResponse:
+    return await ArticleService(db).bulk_update(current_user, body)
+
+
+@router.delete("/bulk", response_model=BulkActionResponse)
+async def bulk_delete_articles(
+    body: BulkDeleteRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> BulkActionResponse:
+    return await ArticleService(db).bulk_delete(current_user, body)
 
 
 @router.patch("/{id}", response_model=ArticleResponse)

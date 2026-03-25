@@ -1,6 +1,6 @@
 import { api, getBootstrapPromise } from "./api";
 import { getStoredSession } from "./session";
-import type { ArticleCard, ArticleFacets, ArticlePage, ArticleSort } from "@/types";
+import type { ArticleCard, ArticleCursorPage, ArticleSearchField, ArticleSort } from "@/types";
 
 const LOCAL_ARTICLES_KEY = "arkeep_guest_articles_v1";
 const DEFAULT_PAGE_SIZE = 8;
@@ -9,9 +9,10 @@ export type ListArticlesParams = {
   isRead?: boolean;
   sort?: ArticleSort;
   q?: string;
+  searchField?: ArticleSearchField;
   category?: string;
   domain?: string;
-  page?: number;
+  cursor?: string;
   size?: number;
 };
 
@@ -25,6 +26,31 @@ export type UpdateArticleInput = {
   isRead?: boolean;
   category?: string | null;
   description?: string | null;
+};
+
+export type BulkFilter = {
+  isRead?: boolean;
+  category?: string;
+  q?: string;
+  searchField?: string;
+};
+
+export type BulkUpdateInput = {
+  ids?: number[];
+  selectAll?: boolean;
+  filters?: BulkFilter;
+  isRead?: boolean;
+  category?: string;
+};
+
+export type BulkDeleteInput = {
+  ids?: number[];
+  selectAll?: boolean;
+  filters?: BulkFilter;
+};
+
+export type BulkActionResult = {
+  affected: number;
 };
 
 type ArticleMigrationRequest = {
@@ -81,14 +107,17 @@ function toQuery(params: ListArticlesParams): string {
   if (params.q && params.q.trim().length > 0) {
     query.set("q", params.q.trim());
   }
+  if (params.searchField) {
+    query.set("searchField", params.searchField);
+  }
   if (params.category && params.category.trim().length > 0) {
     query.set("category", params.category.trim());
   }
   if (params.domain && params.domain.trim().length > 0) {
     query.set("domain", params.domain.trim());
   }
-  if (params.page) {
-    query.set("page", String(params.page));
+  if (params.cursor) {
+    query.set("cursor", params.cursor);
   }
   if (params.size) {
     query.set("size", String(params.size));
@@ -179,8 +208,11 @@ function filterLocalArticles(items: ArticleCard[], params: ListArticlesParams): 
     if (typeof params.isRead === "boolean" && item.isRead !== params.isRead) {
       return false;
     }
-    if (q && !item.title.toLowerCase().includes(q)) {
-      return false;
+    if (q) {
+      const searchTarget = params.searchField === "url"
+        ? item.url.toLowerCase()
+        : item.title.toLowerCase();
+      if (!searchTarget.includes(q)) return false;
     }
     if (category && item.category !== category) {
       return false;
@@ -200,51 +232,39 @@ function sortLocalArticles(items: ArticleCard[], sort: ArticleSort = "latest"): 
   });
 }
 
-function paginateLocalArticles(items: ArticleCard[], page = 1, size = DEFAULT_PAGE_SIZE): ArticlePage {
-  const safePage = page < 1 ? 1 : page;
-  const safeSize = size < 1 ? DEFAULT_PAGE_SIZE : size;
+function cursorLocalArticles(items: ArticleCard[], params: ListArticlesParams): ArticleCursorPage {
+  const size = params.size ?? DEFAULT_PAGE_SIZE;
+  const sort = params.sort ?? "latest";
   const totalItems = items.length;
-  const totalPages = Math.max(1, Math.ceil(totalItems / safeSize));
-  const currentPage = Math.min(safePage, totalPages);
-  const start = (currentPage - 1) * safeSize;
-  const paged = items.slice(start, start + safeSize);
 
-  return {
-    items: paged,
-    page: currentPage,
-    size: safeSize,
-    totalItems,
-    totalPages,
-    hasNext: currentPage < totalPages,
-    hasPrevious: currentPage > 1
-  };
+  let sliced = items;
+  if (params.cursor) {
+    const cursorId = parseInt(params.cursor, 10);
+    sliced = sort === "oldest"
+      ? items.filter((item) => item.id > cursorId)
+      : items.filter((item) => item.id < cursorId);
+  }
+
+  const fetched = sliced.slice(0, size + 1);
+  const hasNext = fetched.length > size;
+  const pageItems = fetched.slice(0, size);
+  const nextCursor = hasNext && pageItems.length > 0 ? String(pageItems[pageItems.length - 1].id) : null;
+
+  return { items: pageItems, nextCursor, hasNext, totalItems };
 }
 
-export async function listArticles(params: ListArticlesParams = {}): Promise<ArticlePage> {
+export async function listArticles(params: ListArticlesParams = {}): Promise<ArticleCursorPage> {
   return withServerFallback(
-    () => api<ArticlePage>(`/articles${toQuery(params)}`),
+    () => api<ArticleCursorPage>(`/articles${toQuery(params)}`),
     () => {
       const local = readLocalArticles();
       const filtered = filterLocalArticles(local, params);
       const sorted = sortLocalArticles(filtered, params.sort ?? "latest");
-      return paginateLocalArticles(sorted, params.page ?? 1, params.size ?? DEFAULT_PAGE_SIZE);
+      return cursorLocalArticles(sorted, params);
     }
   );
 }
 
-export async function listArticleFacets(): Promise<ArticleFacets> {
-  return withServerFallback(
-    () => api<ArticleFacets>("/articles/facets"),
-    () => {
-      const local = readLocalArticles();
-      const categories = Array.from(
-        new Set(local.map((item) => item.category).filter((value): value is string => Boolean(value && value.trim().length > 0)))
-      ).sort((a, b) => a.localeCompare(b));
-      const domains = Array.from(new Set(local.map((item) => item.domain))).sort((a, b) => a.localeCompare(b));
-      return { categories, domains };
-    }
-  );
-}
 
 export async function createArticle(input: CreateArticleInput): Promise<ArticleCard> {
   return withServerFallback(
@@ -309,6 +329,65 @@ export async function deleteArticle(id: number): Promise<void> {
       }
       writeLocalArticles(local.filter((item) => item.id !== id));
       return undefined;
+    }
+  );
+}
+
+function matchesBulkFilter(item: ArticleCard, filters?: BulkFilter): boolean {
+  if (!filters) return true;
+  if (filters.isRead !== undefined && item.isRead !== filters.isRead) return false;
+  if (filters.category && item.category !== filters.category) return false;
+  if (filters.q) {
+    const q = filters.q.toLowerCase();
+    const target = filters.searchField === "url" ? item.url.toLowerCase() : item.title.toLowerCase();
+    if (!target.includes(q)) return false;
+  }
+  return true;
+}
+
+export async function bulkUpdateArticles(input: BulkUpdateInput): Promise<BulkActionResult> {
+  return withServerFallback(
+    () =>
+      api<BulkActionResult>("/articles/bulk", {
+        method: "PATCH",
+        body: JSON.stringify(input),
+      }),
+    () => {
+      const local = readLocalArticles();
+      const idSet = input.selectAll ? null : new Set(input.ids ?? []);
+      let affected = 0;
+      const updated = local.map((item) => {
+        const targeted = idSet ? idSet.has(item.id) : matchesBulkFilter(item, input.filters);
+        if (!targeted) return item;
+        affected++;
+        return {
+          ...item,
+          isRead: input.isRead !== undefined ? input.isRead : item.isRead,
+          category: input.category !== undefined ? normalizeCategory(input.category) : item.category,
+        };
+      });
+      writeLocalArticles(updated);
+      return { affected };
+    }
+  );
+}
+
+export async function bulkDeleteArticles(input: BulkDeleteInput): Promise<BulkActionResult> {
+  return withServerFallback(
+    () =>
+      api<BulkActionResult>("/articles/bulk", {
+        method: "DELETE",
+        body: JSON.stringify(input),
+      }),
+    () => {
+      const local = readLocalArticles();
+      const idSet = input.selectAll ? null : new Set(input.ids ?? []);
+      const remaining = local.filter((item) =>
+        idSet ? !idSet.has(item.id) : !matchesBulkFilter(item, input.filters)
+      );
+      const affected = local.length - remaining.length;
+      writeLocalArticles(remaining);
+      return { affected };
     }
   );
 }
