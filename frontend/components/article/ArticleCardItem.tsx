@@ -6,6 +6,7 @@ import DriveFileRenameOutlineIcon from "@mui/icons-material/DriveFileRenameOutli
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 import RadioButtonUncheckedIcon from "@mui/icons-material/RadioButtonUnchecked";
 import Box from "@mui/material/Box";
+import Divider from "@mui/material/Divider";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Checkbox from "@mui/material/Checkbox";
@@ -125,7 +126,7 @@ export const ArticleCardItem = memo(function ArticleCardItem({ card, categories,
               top: 4,
               right: 4,
               color: "white",
-              opacity: showCheckbox ? 1 : 0,
+              opacity: { xs: 1, sm: showCheckbox ? 1 : 0 },
               transition: "opacity 140ms ease",
               bgcolor: "rgba(0,0,0,0.25)",
               borderRadius: "4px",
@@ -238,6 +239,7 @@ export const ArticleCardItem = memo(function ArticleCardItem({ card, categories,
           </ListItemIcon>
           URL 복사
         </MenuItem>
+        <Divider />
         <MenuItem
           disabled={isBusy}
           sx={{ color: "error.main", fontSize: 13 }}
