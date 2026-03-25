@@ -9,6 +9,7 @@ import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import DriveFileRenameOutlineIcon from "@mui/icons-material/DriveFileRenameOutline";
 import GridViewIcon from "@mui/icons-material/GridView";
 import MenuIcon from "@mui/icons-material/Menu";
+import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 import RadioButtonUncheckedIcon from "@mui/icons-material/RadioButtonUnchecked";
 import SearchIcon from "@mui/icons-material/Search";
 import SortIcon from "@mui/icons-material/Sort";
@@ -30,6 +31,7 @@ import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import Tooltip from "@mui/material/Tooltip";
 import { ThemeProvider } from "@mui/material/styles";
+import useMediaQuery from "@mui/material/useMediaQuery";
 import Typography from "@mui/material/Typography";
 import { HOME_THEME } from "@/constants/theme";
 import { DRAWER_WIDTH, SYNC_BANNER_HEIGHT, TOP_BAR_HEIGHT } from "@/constants/layout";
@@ -82,6 +84,8 @@ export default function HomePage() {
   const [selectAllMode, setSelectAllMode] = useState(false); // 전체(DB) 선택 모드
   const [isTitleIconHovered, setIsTitleIconHovered] = useState(false);
   const [isBulkCategoryOpen, setIsBulkCategoryOpen] = useState(false);
+  const [bulkMenuAnchor, setBulkMenuAnchor] = useState<HTMLElement | null>(null);
+  const isMobile = useMediaQuery("(max-width:600px)");
   const [viewMode, setViewMode] = useViewMode();
   const filterState = useArticleFilter();
   const articleState = useArticles({ ...filterState });
@@ -278,7 +282,7 @@ export default function HomePage() {
             {/* 상단 바: 햄버거 + 로고 + 검색 + 추가 */}
             <Box
               sx={{
-                px: { xs: 2, sm: 3, lg: 4 },
+                px: { xs: 1.5, sm: 3, lg: 4 },
                 height: `${TOP_BAR_HEIGHT}px`,
                 display: "flex",
                 alignItems: "center",
@@ -416,7 +420,7 @@ export default function HomePage() {
             </Box>
 
               {/* 타이틀 바 */}
-              <Stack direction="row" justifyContent="space-between" alignItems="center" flexWrap="wrap" rowGap={1} sx={{ px: { xs: 2, sm: 3, lg: 4 }, mb: 1 }}>
+              <Stack direction="row" justifyContent="space-between" alignItems="center" flexWrap="wrap" rowGap={1} sx={{ px: { xs: 1.5, sm: 3, lg: 4 }, mb: 1 }}>
                 <Stack direction="row" spacing={1} alignItems="center">
                   {(() => {
                     const current = FILTER_ITEMS.find((f) => f.value === filterState.filter);
@@ -424,8 +428,9 @@ export default function HomePage() {
                     return (
                       <>
                         <Box
-                          onMouseEnter={() => setIsTitleIconHovered(true)}
-                          onMouseLeave={() => setIsTitleIconHovered(false)}
+                          onMouseEnter={() => !isMobile && setIsTitleIconHovered(true)}
+                          onMouseLeave={() => !isMobile && setIsTitleIconHovered(false)}
+                          onClick={isMobile ? () => { if (!isBulkMode) setIsBulkMode(true); handleSelectAll(); } : undefined}
                           sx={{ display: "flex", alignItems: "center", justifyContent: "center", width: 20, height: 20, color: "#64748b", cursor: "pointer", flexShrink: 0 }}
                         >
                           {showCheck ? (
@@ -462,6 +467,70 @@ export default function HomePage() {
                 </Stack>
 
                 {isBulkMode ? (
+                  isMobile ? (
+                    /* 모바일 벌크 버튼: ··· 메뉴 + × 취소 */
+                    <Stack direction="row" spacing={0.5} alignItems="center" sx={{ mr: "-5px" }}>
+                      <IconButton
+                        size="small"
+                        disabled={selectedIds.size === 0 && !selectAllMode}
+                        onClick={(e) => setBulkMenuAnchor(e.currentTarget)}
+                        sx={{ color: "#475569" }}
+                      >
+                        <MoreHorizIcon fontSize="small" />
+                      </IconButton>
+                      <Menu
+                        anchorEl={bulkMenuAnchor}
+                        open={Boolean(bulkMenuAnchor)}
+                        onClose={() => setBulkMenuAnchor(null)}
+                        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+                        transformOrigin={{ vertical: "top", horizontal: "right" }}
+                        PaperProps={{ elevation: 0, sx: { boxShadow: "0 4px 16px rgba(0,0,0,0.12)", border: "1px solid #e2e8f0", borderRadius: 1.5, minWidth: 160 } }}
+                        MenuListProps={{ dense: true }}
+                      >
+                        <MenuItem
+                          onClick={async () => {
+                            setBulkMenuAnchor(null);
+                            await articleState.handleBulkToggleRead(Array.from(selectedIds), true, selectAllMode);
+                            exitBulkMode();
+                          }}
+                          sx={{ fontSize: 14 }}
+                        >
+                          <ListItemIcon><CheckCircleOutlineIcon sx={{ fontSize: 16 }} /></ListItemIcon>
+                          열람 처리
+                        </MenuItem>
+                        <MenuItem
+                          onClick={async () => {
+                            setBulkMenuAnchor(null);
+                            await articleState.handleBulkToggleRead(Array.from(selectedIds), false, selectAllMode);
+                            exitBulkMode();
+                          }}
+                          sx={{ fontSize: 14 }}
+                        >
+                          <ListItemIcon><RadioButtonUncheckedIcon sx={{ fontSize: 16 }} /></ListItemIcon>
+                          미열람 처리
+                        </MenuItem>
+                        <MenuItem
+                          onClick={() => { setBulkMenuAnchor(null); setIsBulkCategoryOpen(true); }}
+                          sx={{ fontSize: 14 }}
+                        >
+                          <ListItemIcon><DriveFileRenameOutlineIcon sx={{ fontSize: 16 }} /></ListItemIcon>
+                          카테고리 수정
+                        </MenuItem>
+                        <Divider />
+                        <MenuItem
+                          onClick={() => { setBulkMenuAnchor(null); void handleBulkDeleteClick(); }}
+                          sx={{ fontSize: 14, color: "error.main" }}
+                        >
+                          <ListItemIcon><DeleteOutlineIcon sx={{ fontSize: 16 }} color="error" /></ListItemIcon>
+                          삭제
+                        </MenuItem>
+                      </Menu>
+                      <IconButton size="small" onClick={exitBulkMode} sx={{ color: "#64748b" }}>
+                        <CloseIcon fontSize="small" />
+                      </IconButton>
+                    </Stack>
+                  ) : (
+                  /* 데스크탑 벌크 버튼: 전체 노출 */
                   <Stack direction="row" spacing={0.75} alignItems="center">
                     <Button
                       variant="outlined"
@@ -472,7 +541,7 @@ export default function HomePage() {
                         exitBulkMode();
                       }}
                       startIcon={<CheckCircleOutlineIcon fontSize="small" />}
-                      sx={{ fontSize: 12, fontWeight: 500, whiteSpace: "nowrap", borderColor: "#cbd5e1", color: "#475569", "&:hover": { borderColor: "#94a3b8", bgcolor: "#f8fafc" } }}
+                      sx={{ fontSize: 12, fontWeight: 500, whiteSpace: "nowrap", minWidth: 0, px: 1.5, borderColor: "#cbd5e1", color: "#475569", "&:hover": { borderColor: "#94a3b8", bgcolor: "#f8fafc" } }}
                     >
                       열람 처리
                     </Button>
@@ -485,7 +554,7 @@ export default function HomePage() {
                         exitBulkMode();
                       }}
                       startIcon={<RadioButtonUncheckedIcon fontSize="small" />}
-                      sx={{ fontSize: 12, fontWeight: 500, whiteSpace: "nowrap", borderColor: "#cbd5e1", color: "#475569", "&:hover": { borderColor: "#94a3b8", bgcolor: "#f8fafc" } }}
+                      sx={{ fontSize: 12, fontWeight: 500, whiteSpace: "nowrap", minWidth: 0, px: 1.5, borderColor: "#cbd5e1", color: "#475569", "&:hover": { borderColor: "#94a3b8", bgcolor: "#f8fafc" } }}
                     >
                       미열람 처리
                     </Button>
@@ -495,7 +564,7 @@ export default function HomePage() {
                       disabled={selectedIds.size === 0 && !selectAllMode}
                       onClick={() => setIsBulkCategoryOpen(true)}
                       startIcon={<DriveFileRenameOutlineIcon fontSize="small" />}
-                      sx={{ fontSize: 12, fontWeight: 500, whiteSpace: "nowrap", borderColor: "#cbd5e1", color: "#475569", "&:hover": { borderColor: "#94a3b8", bgcolor: "#f8fafc" } }}
+                      sx={{ fontSize: 12, fontWeight: 500, whiteSpace: "nowrap", minWidth: 0, px: 1.5, borderColor: "#cbd5e1", color: "#475569", "&:hover": { borderColor: "#94a3b8", bgcolor: "#f8fafc" } }}
                     >
                       카테고리 수정
                     </Button>
@@ -505,7 +574,7 @@ export default function HomePage() {
                       disabled={selectedIds.size === 0 && !selectAllMode}
                       onClick={() => void handleBulkDeleteClick()}
                       startIcon={<DeleteOutlineIcon fontSize="small" />}
-                      sx={{ fontSize: 12, fontWeight: 500, whiteSpace: "nowrap", borderColor: "#fca5a5", color: "error.main", "&:hover": { borderColor: "error.main", bgcolor: "#fff5f5" } }}
+                      sx={{ fontSize: 12, fontWeight: 500, whiteSpace: "nowrap", minWidth: 0, px: 1.5, borderColor: "#fca5a5", color: "error.main", "&:hover": { borderColor: "error.main", bgcolor: "#fff5f5" } }}
                     >
                       삭제
                     </Button>
@@ -515,11 +584,12 @@ export default function HomePage() {
                       size="small"
                       onClick={exitBulkMode}
                       startIcon={<CloseIcon fontSize="small" />}
-                      sx={{ fontSize: 12, fontWeight: 500, whiteSpace: "nowrap", borderColor: "#cbd5e1", color: "#64748b", "&:hover": { borderColor: "#94a3b8", bgcolor: "#f8fafc" } }}
+                      sx={{ fontSize: 12, fontWeight: 500, whiteSpace: "nowrap", minWidth: 0, px: 1.5, borderColor: "#cbd5e1", color: "#64748b", "&:hover": { borderColor: "#94a3b8", bgcolor: "#f8fafc" } }}
                     >
                       취소
                     </Button>
                   </Stack>
+                  )
                 ) : (
                   <Stack direction="row" spacing={0.5} alignItems="center" sx={{ mr: "-5px" }}>
                     <IconButton size="small" onClick={(e) => setSortMenuAnchor(e.currentTarget)} sx={{ color: "#64748b" }}>
@@ -554,7 +624,7 @@ export default function HomePage() {
             </Box>
 
             {/* 콘텐츠 영역 */}
-            <Box sx={{ flex: 1, overflowY: "auto", px: { xs: 2, sm: 3, lg: 4 }, pt: 2, pb: 3 }}>
+            <Box sx={{ flex: 1, overflowY: "auto", px: { xs: 1.5, sm: 3, lg: 4 }, pt: 2, pb: 3 }}>
               {combinedError ? (
                 <Alert severity="error" sx={{ mb: 2 }}>
                   {combinedError}

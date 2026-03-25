@@ -7,6 +7,7 @@ import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 import RadioButtonUncheckedIcon from "@mui/icons-material/RadioButtonUnchecked";
 import Box from "@mui/material/Box";
 import Checkbox from "@mui/material/Checkbox";
+import Divider from "@mui/material/Divider";
 import IconButton from "@mui/material/IconButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import Menu from "@mui/material/Menu";
@@ -79,7 +80,7 @@ export const ArticleListItem = memo(function ArticleListItem({ card, categories,
           }
         }}
         sx={{
-          px: 2,
+          px: { xs: 1, sm: 2 },
           py: 1.5,
           cursor: "pointer",
           opacity: isRead ? 0.7 : 1,
@@ -98,7 +99,7 @@ export const ArticleListItem = memo(function ArticleListItem({ card, categories,
           sx={{
             width: 24,
             flexShrink: 0,
-            opacity: showCheckbox ? 1 : 0,
+            opacity: { xs: 1, sm: showCheckbox ? 1 : 0 },
             transition: "opacity 140ms ease",
           }}
           onClick={(e) => e.stopPropagation()}
@@ -226,6 +227,7 @@ export const ArticleListItem = memo(function ArticleListItem({ card, categories,
           </ListItemIcon>
           URL 복사
         </MenuItem>
+        <Divider />
         <MenuItem
           disabled={isBusy}
           sx={{ color: "error.main", fontSize: 13 }}
