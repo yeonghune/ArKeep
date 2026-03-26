@@ -3,10 +3,14 @@
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import AddIcon from "@mui/icons-material/Add";
 import BookmarkAddedIcon from "@mui/icons-material/BookmarkAdded";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
+import GridViewIcon from "@mui/icons-material/GridView";
 import LabelOutlinedIcon from "@mui/icons-material/LabelOutlined";
+import MenuIcon from "@mui/icons-material/Menu";
 import SearchIcon from "@mui/icons-material/Search";
+import SortIcon from "@mui/icons-material/Sort";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -41,6 +45,15 @@ function ensureGoogleScript(): Promise<void> {
   });
 }
 
+const FAKE_ARTICLES = [
+  { title: "React Server Components 완벽 가이드", domain: "vercel.com", gradient: "linear-gradient(135deg, #3b82f6, #8b5cf6)", read: false },
+  { title: "2024 디자인 트렌드 총정리", domain: "medium.com", gradient: "linear-gradient(135deg, #10b981, #3b82f6)", read: true },
+  { title: "JavaScript 성능 최적화 팁 10가지", domain: "dev.to", gradient: "linear-gradient(135deg, #f59e0b, #ef4444)", read: false },
+  { title: "CSS Grid 레이아웃 완전 정복", domain: "css-tricks.com", gradient: "linear-gradient(135deg, #ec4899, #8b5cf6)", read: false },
+];
+
+const FAKE_CATEGORIES = ["개발", "디자인", "비즈니스"];
+
 const FEATURES = [
   {
     icon: <BookmarkAddedIcon sx={{ fontSize: 28, color: "#137fec" }} />,
@@ -63,6 +76,257 @@ const FEATURES = [
     desc: "제목과 URL로 저장한 아티클을 즉시 검색합니다.",
   },
 ];
+
+function AppMockup() {
+  return (
+    <Box
+      sx={{
+        mx: "auto",
+        maxWidth: 900,
+        borderRadius: { xs: 3, md: 4 },
+        overflow: "hidden",
+        boxShadow: "0 32px 80px rgba(0,0,0,0.18), 0 8px 24px rgba(0,0,0,0.10)",
+        border: "1px solid #e2e8f0",
+        userSelect: "none",
+        pointerEvents: "none",
+      }}
+    >
+      {/* Browser chrome */}
+      <Box
+        sx={{
+          bgcolor: "#f1f5f9",
+          borderBottom: "1px solid #e2e8f0",
+          px: 2,
+          py: 1,
+          display: "flex",
+          alignItems: "center",
+          gap: 1.5,
+        }}
+      >
+        <Stack direction="row" spacing={0.75}>
+          {["#ef4444", "#f59e0b", "#22c55e"].map((c) => (
+            <Box key={c} sx={{ width: 10, height: 10, borderRadius: "50%", bgcolor: c }} />
+          ))}
+        </Stack>
+        <Box
+          sx={{
+            flex: 1,
+            bgcolor: "#ffffff",
+            borderRadius: 1,
+            height: 22,
+            display: "flex",
+            alignItems: "center",
+            px: 1.5,
+            gap: 0.5,
+            border: "1px solid #e2e8f0",
+          }}
+        >
+          <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: "#137fec" }} />
+          <Typography sx={{ fontSize: 10, color: "#94a3b8", fontFamily: "monospace" }}>
+            arkeep.net
+          </Typography>
+        </Box>
+      </Box>
+
+      {/* App UI */}
+      <Box sx={{ bgcolor: "#f8fafc", display: "flex", flexDirection: "column" }}>
+        {/* Topbar */}
+        <Box
+          sx={{
+            bgcolor: "#ffffff",
+            borderBottom: "1px solid #f1f5f9",
+            px: 2,
+            height: 44,
+            display: "flex",
+            alignItems: "center",
+            gap: 1,
+          }}
+        >
+          <MenuIcon sx={{ fontSize: 16, color: "#94a3b8" }} />
+          <Stack direction="row" spacing={0.5} alignItems="center" sx={{ mr: 0.5 }}>
+            <Box sx={{ width: 16, height: 16, bgcolor: "#137fec", borderRadius: 0.5 }} />
+            <Typography sx={{ fontSize: 11, fontWeight: 700, color: "#1e293b" }}>ArKeep</Typography>
+          </Stack>
+          <Box
+            sx={{
+              flex: 1,
+              maxWidth: 240,
+              height: 22,
+              bgcolor: "#f8fafc",
+              border: "1px solid #e2e8f0",
+              borderRadius: 1,
+              display: "flex",
+              alignItems: "center",
+              px: 1,
+              gap: 0.5,
+            }}
+          >
+            <SearchIcon sx={{ fontSize: 10, color: "#94a3b8" }} />
+            <Typography sx={{ fontSize: 9, color: "#cbd5e1" }}>검색</Typography>
+          </Box>
+          <Box sx={{ flex: 1 }} />
+          <Box
+            sx={{
+              bgcolor: "#137fec",
+              borderRadius: 1,
+              px: 1,
+              height: 22,
+              display: "flex",
+              alignItems: "center",
+              gap: 0.25,
+            }}
+          >
+            <AddIcon sx={{ fontSize: 10, color: "#ffffff" }} />
+            <Typography sx={{ fontSize: 9, color: "#ffffff", fontWeight: 600 }}>추가</Typography>
+          </Box>
+        </Box>
+
+        {/* Title bar */}
+        <Box
+          sx={{
+            bgcolor: "#ffffff",
+            borderBottom: "1px solid #f1f5f9",
+            px: 2,
+            height: 32,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <Stack direction="row" spacing={0.75} alignItems="center">
+            <Typography sx={{ fontSize: 9, fontWeight: 500, color: "#1e293b" }}>모든 카테고리</Typography>
+            <Typography sx={{ fontSize: 9, color: "#94a3b8" }}>4개</Typography>
+          </Stack>
+          <Stack direction="row" spacing={0.5}>
+            <SortIcon sx={{ fontSize: 12, color: "#94a3b8" }} />
+            <GridViewIcon sx={{ fontSize: 12, color: "#94a3b8" }} />
+          </Stack>
+        </Box>
+
+        {/* Body: sidebar + cards */}
+        <Box sx={{ display: "flex", minHeight: 220 }}>
+          {/* Sidebar */}
+          <Box
+            sx={{
+              width: 130,
+              flexShrink: 0,
+              bgcolor: "#f8fafc",
+              borderRight: "1px solid #f1f5f9",
+              p: 1.5,
+              display: { xs: "none", sm: "block" },
+            }}
+          >
+            {/* Avatar area */}
+            <Stack direction="row" spacing={0.75} alignItems="center" sx={{ mb: 2 }}>
+              <Box sx={{ width: 20, height: 20, borderRadius: "50%", bgcolor: "linear-gradient(135deg,#3b82f6,#8b5cf6)", background: "linear-gradient(135deg,#3b82f6,#8b5cf6)" }} />
+              <Typography sx={{ fontSize: 9, fontWeight: 600, color: "#475569" }}>사용자</Typography>
+            </Stack>
+
+            {/* Filters */}
+            {["미열람", "전체"].map((label, i) => (
+              <Box
+                key={label}
+                sx={{
+                  px: 1,
+                  py: 0.5,
+                  borderRadius: 1,
+                  mb: 0.25,
+                  bgcolor: i === 0 ? "#eff6ff" : "transparent",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 0.5,
+                }}
+              >
+                <Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: i === 0 ? "#137fec" : "#cbd5e1" }} />
+                <Typography sx={{ fontSize: 9, color: i === 0 ? "#137fec" : "#64748b", fontWeight: i === 0 ? 600 : 400 }}>
+                  {label}
+                </Typography>
+              </Box>
+            ))}
+
+            <Divider sx={{ my: 1 }} />
+
+            <Typography sx={{ fontSize: 8, color: "#94a3b8", fontWeight: 600, textTransform: "uppercase", letterSpacing: 0.5, px: 1, mb: 0.5 }}>
+              카테고리
+            </Typography>
+            {FAKE_CATEGORIES.map((cat) => (
+              <Box key={cat} sx={{ px: 1, py: 0.5, borderRadius: 1, mb: 0.25, display: "flex", alignItems: "center", gap: 0.5 }}>
+                <LabelOutlinedIcon sx={{ fontSize: 8, color: "#94a3b8" }} />
+                <Typography sx={{ fontSize: 9, color: "#64748b" }}>{cat}</Typography>
+              </Box>
+            ))}
+          </Box>
+
+          {/* Card grid */}
+          <Box
+            sx={{
+              flex: 1,
+              p: 1.5,
+              display: "grid",
+              gridTemplateColumns: "repeat(2, 1fr)",
+              gap: 1.5,
+              alignContent: "start",
+            }}
+          >
+            {FAKE_ARTICLES.map((a) => (
+              <Box
+                key={a.title}
+                sx={{
+                  bgcolor: "#ffffff",
+                  borderRadius: 1.5,
+                  border: "1px solid #e2e8f0",
+                  overflow: "hidden",
+                }}
+              >
+                {/* Thumbnail */}
+                <Box sx={{ height: 60, background: a.gradient, position: "relative" }}>
+                  {a.read && (
+                    <Box
+                      sx={{
+                        position: "absolute",
+                        top: 4,
+                        right: 4,
+                        bgcolor: "rgba(255,255,255,0.9)",
+                        borderRadius: 10,
+                        px: 0.75,
+                        py: 0.25,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 0.25,
+                      }}
+                    >
+                      <CheckCircleOutlineIcon sx={{ fontSize: 7, color: "#22c55e" }} />
+                      <Typography sx={{ fontSize: 7, color: "#22c55e", fontWeight: 600 }}>열람</Typography>
+                    </Box>
+                  )}
+                </Box>
+                {/* Content */}
+                <Box sx={{ p: 1 }}>
+                  <Typography
+                    sx={{
+                      fontSize: 9,
+                      fontWeight: 600,
+                      color: "#1e293b",
+                      lineHeight: 1.4,
+                      mb: 0.5,
+                      display: "-webkit-box",
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: "vertical",
+                      overflow: "hidden",
+                    }}
+                  >
+                    {a.title}
+                  </Typography>
+                  <Typography sx={{ fontSize: 8, color: "#94a3b8" }}>{a.domain}</Typography>
+                </Box>
+              </Box>
+            ))}
+          </Box>
+        </Box>
+      </Box>
+    </Box>
+  );
+}
 
 export default function LandingPage() {
   const router = useRouter();
@@ -170,15 +434,13 @@ export default function LandingPage() {
       {/* Hero */}
       <Box
         sx={{
-          flex: 1,
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          justifyContent: "center",
           textAlign: "center",
           px: { xs: 3, sm: 6 },
           pt: { xs: 8, md: 12 },
-          pb: { xs: 8, md: 10 },
+          pb: { xs: 6, md: 8 },
         }}
       >
         <Box
@@ -234,7 +496,7 @@ export default function LandingPage() {
           </Alert>
         )}
 
-        <Stack spacing={2} alignItems="center" id="hero-cta">
+        <Stack spacing={2} alignItems="center" id="hero-cta" sx={{ mb: { xs: 8, md: 12 } }}>
           <Box
             ref={buttonContainerRef}
             sx={{
@@ -263,6 +525,9 @@ export default function LandingPage() {
             게스트로 체험하기 →
           </Button>
         </Stack>
+
+        {/* App Mockup */}
+        <AppMockup />
       </Box>
 
       {/* Features */}
@@ -272,6 +537,7 @@ export default function LandingPage() {
           borderTop: "1px solid #f1f5f9",
           px: { xs: 3, sm: 6, md: 10 },
           py: { xs: 8, md: 10 },
+          mt: { xs: 6, md: 10 },
         }}
       >
         <Typography
