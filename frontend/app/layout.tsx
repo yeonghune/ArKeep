@@ -3,12 +3,21 @@ import type { Metadata } from "next";
 import React from "react";
 
 export const metadata: Metadata = {
-  title: "ArKeep | Article Keep",
-  description: "Article Keep web app",
+  title: "ArKeep — 읽고 싶은 아티클, 한 곳에서",
+  description: "URL 하나면 충분합니다. 제목과 썸네일은 자동으로 가져오고, 카테고리로 정리하고, 읽기 상태까지 관리하는 아티클 매니저입니다.",
+  keywords: ["아티클", "북마크", "링크 저장", "읽기 관리", "ArKeep"],
+  openGraph: {
+    title: "ArKeep — 읽고 싶은 아티클, 한 곳에서",
+    description: "URL 하나면 충분합니다. 카테고리로 정리하고 읽기 상태까지 관리하세요.",
+    url: "https://www.arkeep.net",
+    siteName: "ArKeep",
+    locale: "ko_KR",
+    type: "website",
+  },
   icons: {
     icon: "/icon.svg",
     shortcut: "/icon.svg",
-    apple: "/icon.svg"
+    apple: "/icon.svg",
   },
   viewport: "width=device-width, initial-scale=1, viewport-fit=cover",
 };
