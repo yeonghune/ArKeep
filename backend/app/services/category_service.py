@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.category import Category
 from app.models.user import User
-from app.schemas.category import CategoryListResponse, CategoryResponse, CreateCategoryRequest, UpdateCategoryRequest
+from app.schemas.category import BulkDeleteCategoryRequest, CategoryListResponse, CategoryResponse, CreateCategoryRequest, UpdateCategoryRequest
 from app.services.auth_service import AppException
 
 
@@ -83,5 +83,16 @@ class CategoryService:
         # ON DELETE SET NULL이 articles.category_id를 자동으로 NULL 처리
         await self.db.execute(
             delete(Category).where(Category.id == category_id)
+        )
+        await self.db.commit()
+
+    async def bulk_delete_categories(self, user: User, body: BulkDeleteCategoryRequest) -> None:
+        if not body.ids:
+            return
+        await self.db.execute(
+            delete(Category).where(
+                Category.id.in_(body.ids),
+                Category.user_id == user.id,
+            )
         )
         await self.db.commit()

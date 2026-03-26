@@ -63,6 +63,7 @@ type Props = {
   onAddCategory: (name: string) => Promise<Category>;
   onRenameCategory: (id: number, name: string) => Promise<Category>;
   onDeleteCategory: (id: number) => Promise<void>;
+  onBulkDeleteCategories: (ids: number[]) => Promise<void>;
   isLoggedIn: boolean;
   userName?: string;
   userEmail?: string;
@@ -92,6 +93,7 @@ export function SidebarFilters({
   onAddCategory,
   onRenameCategory,
   onDeleteCategory,
+  onBulkDeleteCategories,
   isLoggedIn,
   userName,
   userEmail,
@@ -227,10 +229,11 @@ export function SidebarFilters({
   async function handleBulkDelete() {
     setIsBulkDeleting(true);
     try {
+      const ids = [...selectedCatIds];
       const deletedNames = categories
         .filter((c) => selectedCatIds.has(c.id))
         .map((c) => c.name);
-      await Promise.all([...selectedCatIds].map((id) => onDeleteCategory(id)));
+      await onBulkDeleteCategories(ids);
       if (deletedNames.includes(category)) onCategoryChange("");
       setIsBulkConfirmOpen(false);
       handleExitBulkDeleteMode();

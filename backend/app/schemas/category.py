@@ -47,3 +47,7 @@ class CategoryResponse(BaseModel):
 
 class CategoryListResponse(BaseModel):
     categories: list[CategoryResponse]
+
+
+class BulkDeleteCategoryRequest(BaseModel):
+    ids: list[int]
