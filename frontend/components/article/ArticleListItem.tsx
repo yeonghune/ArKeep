@@ -67,7 +67,7 @@ export const ArticleListItem = memo(function ArticleListItem({ card, categories,
       <Stack
         direction="row"
         alignItems="center"
-        spacing={1.5}
+        spacing={1}
         role="button"
         tabIndex={0}
         onClick={handleRowClick}
@@ -80,8 +80,8 @@ export const ArticleListItem = memo(function ArticleListItem({ card, categories,
           }
         }}
         sx={{
-          px: { xs: 1, sm: 2 },
-          py: 1.5,
+          p: 1.5,
+          minHeight: 72,
           cursor: "pointer",
           opacity: isRead ? 0.7 : 1,
           bgcolor: isSelected ? "rgba(37,99,235,0.06)" : "transparent",
@@ -123,8 +123,8 @@ export const ArticleListItem = memo(function ArticleListItem({ card, categories,
             if (imgSrc !== PLACEHOLDER_SRC) setImgSrc(PLACEHOLDER_SRC);
           }}
           sx={{
-            width: 48,
-            height: 48,
+            width: 64,
+            height: 64,
             borderRadius: 1.5,
             objectFit: "cover",
             flexShrink: 0,
@@ -139,9 +139,12 @@ export const ArticleListItem = memo(function ArticleListItem({ card, categories,
               fontSize: 15,
               fontWeight: 600,
               lineHeight: 1.4,
-              whiteSpace: "nowrap",
+              display: "-webkit-box",
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: "vertical",
               overflow: "hidden",
               textOverflow: "ellipsis",
+              wordBreak: "break-word",
             }}
           >
             {card.title}
