@@ -13,6 +13,7 @@ import LogoutIcon from "@mui/icons-material/Logout";
 import MarkAsUnreadIcon from "@mui/icons-material/MarkAsUnread";
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 import PersonIcon from "@mui/icons-material/Person";
+import SettingsIcon from "@mui/icons-material/Settings";
 import SearchIcon from "@mui/icons-material/Search";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import Avatar from "@mui/material/Avatar";
@@ -293,12 +294,16 @@ export function SidebarFilters({
         </Box>
       </Box>
 
-      {/* 로그아웃 드롭다운 */}
+      {/* 아바타 드롭다운 */}
       <Menu anchorEl={menuAnchor} open={Boolean(menuAnchor)} onClose={() => setMenuAnchor(null)} PaperProps={{ elevation: 0, sx: { boxShadow: "0 2px 8px rgba(0,0,0,0.08)", border: "1px solid #e2e8f0", borderRadius: 1.5 } }}>
         <MenuItem disabled>
           <ListItemText primary={userEmail ?? userName ?? "사용자"} primaryTypographyProps={{ fontSize: 13 }} />
         </MenuItem>
         <Divider />
+        <MenuItem component="a" href="/settings" onClick={() => setMenuAnchor(null)}>
+          <ListItemIcon><SettingsIcon fontSize="small" /></ListItemIcon>
+          <ListItemText primary="설정" primaryTypographyProps={{ fontSize: 13 }} />
+        </MenuItem>
         <MenuItem onClick={() => { void onLogout(); setMenuAnchor(null); }}>
           <ListItemIcon><LogoutIcon fontSize="small" /></ListItemIcon>
           <ListItemText primary="로그아웃" primaryTypographyProps={{ fontSize: 13 }} />
