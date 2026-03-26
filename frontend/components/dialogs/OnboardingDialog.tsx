@@ -1,4 +1,4 @@
-import Image from "next/image";
+import ArKeepLogo from "@/components/ArKeepLogo";
 import { useEffect, useRef, useState } from "react";
 import BookmarkAddedIcon from "@mui/icons-material/BookmarkAdded";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
@@ -139,7 +139,7 @@ export function OnboardingDialog({ open, onGuestContinue, onGoogleCredential }: 
       <Box sx={{ p: { xs: 3, sm: 4 }, textAlign: "center" }}>
         {/* 로고 */}
         <Box sx={{ mx: "auto", mb: 2, width: 64, height: 64 }}>
-          <Image src="/icon.svg" alt="ArKeep" width={64} height={64} />
+          <ArKeepLogo size={64} />
         </Box>
 
         <Typography sx={{ fontSize: 22, fontWeight: 700, color: "#111827", mb: 0.5 }}>

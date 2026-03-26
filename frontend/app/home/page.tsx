@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import ArKeepLogo from "@/components/ArKeepLogo";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import AddIcon from "@mui/icons-material/Add";
@@ -311,12 +312,7 @@ export default function HomePage() {
                     cursor: "pointer",
                   }}
                 >
-                  <Box
-                    component="img"
-                    src="/icon.svg"
-                    alt="ArKeep"
-                    sx={{ width: 24, height: 24, display: "block" }}
-                  />
+                  <ArKeepLogo size={24} />
                   <Box
                     component="span"
                     sx={{
