@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import Dialog from "@mui/material/Dialog";
 import { useTheme } from "@mui/material/styles";
 import useMediaQuery from "@mui/material/useMediaQuery";
@@ -17,12 +18,30 @@ export function ArticleDetailModal({ card, onClose, onToggleRead, onSaveMemo, is
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const open = Boolean(card);
 
+  useEffect(() => {
+    if (!open) return;
+
+    history.pushState({ modal: true }, "");
+
+    const handlePopState = () => onClose();
+    window.addEventListener("popstate", handlePopState);
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, [open]);
+
+  const handleClose = () => {
+    if (history.state?.modal) history.back();
+    onClose();
+  };
+
   if (!card) return null;
 
   return (
     <Dialog
       open={open}
-      onClose={onClose}
+      onClose={handleClose}
       fullScreen={isMobile}
       maxWidth="md"
       fullWidth
@@ -37,7 +56,7 @@ export function ArticleDetailModal({ card, onClose, onToggleRead, onSaveMemo, is
       <ArticleDetailContent
         card={card}
         isMobile={isMobile}
-        onClose={onClose}
+        onClose={handleClose}
         onToggleRead={onToggleRead}
         onSaveMemo={onSaveMemo}
         isBusy={isBusy}
