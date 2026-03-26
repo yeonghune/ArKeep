@@ -4,6 +4,7 @@ import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import DriveFileRenameOutlineIcon from "@mui/icons-material/DriveFileRenameOutline";
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
+import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import RadioButtonUncheckedIcon from "@mui/icons-material/RadioButtonUnchecked";
 import Box from "@mui/material/Box";
 import Divider from "@mui/material/Divider";
@@ -180,17 +181,29 @@ export const ArticleCardItem = memo(function ArticleCardItem({ card, categories,
                 {card.domain}
               </Typography>
             </Stack>
-            <IconButton
-              size="small"
-              disabled={isBusy}
-              onClick={(event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                setMenuAnchorEl(event.currentTarget);
-              }}
-            >
-              <MoreHorizIcon fontSize="small" />
-            </IconButton>
+            <Stack direction="row" alignItems="center">
+              <IconButton
+                size="small"
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  window.open(card.url, "_blank", "noopener,noreferrer");
+                }}
+              >
+                <OpenInNewIcon sx={{ fontSize: 16 }} />
+              </IconButton>
+              <IconButton
+                size="small"
+                disabled={isBusy}
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  setMenuAnchorEl(event.currentTarget);
+                }}
+              >
+                <MoreHorizIcon fontSize="small" />
+              </IconButton>
+            </Stack>
           </Stack>
         </CardContent>
       </Card>

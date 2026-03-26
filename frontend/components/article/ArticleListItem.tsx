@@ -3,7 +3,8 @@ import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import DriveFileRenameOutlineIcon from "@mui/icons-material/DriveFileRenameOutline";
-import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
+import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import RadioButtonUncheckedIcon from "@mui/icons-material/RadioButtonUnchecked";
 import Box from "@mui/material/Box";
 import Checkbox from "@mui/material/Checkbox";
@@ -15,7 +16,7 @@ import MenuItem from "@mui/material/MenuItem";
 import Stack from "@mui/material/Stack";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
-import { formatRelativeTime, getCategoryColor, getCategoryLabel } from "@/lib/utils";
+import { formatRelativeTime, getCategoryLabel } from "@/lib/utils";
 import type { Category } from "@/lib/categories";
 import type { ArticleCard } from "@/types";
 import { CardSource } from "./CardSource";
@@ -45,7 +46,6 @@ export const ArticleListItem = memo(function ArticleListItem({ card, categories,
   const [isHovered, setIsHovered] = useState(false);
   const isRead = card.isRead;
   const categoryLabel = getCategoryLabel(card.category);
-  const categoryColor = getCategoryColor(card.category);
   const timeAgo = formatRelativeTime(card.createdAt);
   const isMenuOpen = Boolean(menuAnchorEl);
   const availableCategories = categories;
@@ -153,23 +153,24 @@ export const ArticleListItem = memo(function ArticleListItem({ card, categories,
             <CardSource card={card} />
             <Typography noWrap sx={{ fontSize: 12, color: "#64748b", overflow: "hidden", textOverflow: "ellipsis" }}>{card.domain}</Typography>
             <Typography sx={{ fontSize: 12, color: "#cbd5e1" }}>·</Typography>
-            <Typography sx={{ fontSize: 12, color: categoryColor, fontWeight: 600, flexShrink: 0 }}>{categoryLabel}</Typography>
+            <Typography sx={{ fontSize: 12, color: "#2563eb", fontWeight: 600, flexShrink: 0 }}>{categoryLabel}</Typography>
             <Typography sx={{ fontSize: 12, color: "#cbd5e1" }}>·</Typography>
             <Typography sx={{ fontSize: 12, color: "#94a3b8", flexShrink: 0 }}>{timeAgo}</Typography>
           </Stack>
         </Box>
 
-        {/* 읽음 dot */}
-        <Tooltip title={isRead ? "열람" : "미열람"}>
-          <Box
-            sx={{
-              width: 8,
-              height: 8,
-              borderRadius: "50%",
-              flexShrink: 0,
-              bgcolor: isRead ? "#cbd5e1" : "#2563eb"
+        {/* URL 바로가기 */}
+        <Tooltip title="원문 열기">
+          <IconButton
+            size="small"
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              window.open(card.url, "_blank", "noopener,noreferrer");
             }}
-          />
+          >
+            <OpenInNewIcon sx={{ fontSize: 16 }} />
+          </IconButton>
         </Tooltip>
 
         {/* 3점 메뉴 */}
@@ -182,7 +183,7 @@ export const ArticleListItem = memo(function ArticleListItem({ card, categories,
             setMenuAnchorEl(event.currentTarget);
           }}
         >
-          <MoreHorizIcon fontSize="small" />
+          <MoreVertIcon fontSize="small" />
         </IconButton>
       </Stack>
 
