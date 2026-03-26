@@ -214,7 +214,6 @@ export function useArticles({
   }
 
   async function handleDelete(card: ArticleCard) {
-    if (!window.confirm("아티클을 삭제할까요?")) return;
     setMutatingArticleId(card.id);
     setListError(null);
     try {

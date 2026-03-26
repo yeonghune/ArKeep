@@ -99,7 +99,7 @@ export function SaveLinkModal({ open, onClose, categories, isLoggedIn, onSave, o
       await onSave(normalizedUrl, normalizedCategory, normalizedMemo);
       onClose();
     } catch (saveError) {
-      const message = saveError instanceof Error ? saveError.message : "링크 저장에 실패했습니다.";
+      const message = saveError instanceof Error ? saveError.message : "아티클 저장에 실패했습니다.";
       setError(message);
     } finally {
       setIsSubmitting(false);
@@ -127,10 +127,10 @@ export function SaveLinkModal({ open, onClose, categories, isLoggedIn, onSave, o
       >
         <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 2 }}>
           <Box>
-            <Typography sx={{ fontSize: 30, fontWeight: 700, lineHeight: 1.1 }}>링크 저장</Typography>
+            <Typography sx={{ fontSize: 30, fontWeight: 700, lineHeight: 1.1 }}>아티클 저장</Typography>
             <Typography sx={{ mt: 0.5, color: "#94a3b8", fontSize: 15 }}>저장할 아티클 URL을 붙여넣어 주세요.</Typography>
           </Box>
-          <IconButton onClick={onClose} aria-label="링크 저장 모달 닫기">
+          <IconButton onClick={onClose} aria-label="아티클 저장 모달 닫기">
             <CloseIcon />
           </IconButton>
         </Stack>
