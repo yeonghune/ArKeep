@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.dependencies import get_current_user
 from app.models.user import User
-from app.schemas.category import CategoryListResponse, CategoryResponse, CreateCategoryRequest, UpdateCategoryRequest
+from app.schemas.category import BulkDeleteCategoryRequest, CategoryListResponse, CategoryResponse, CreateCategoryRequest, UpdateCategoryRequest
 from app.services.category_service import CategoryService
 
 router = APIRouter(prefix="/categories", tags=["categories"])
@@ -38,6 +38,16 @@ async def update_category(
 ):
     svc = CategoryService(db)
     return await svc.update_category(current_user, category_id, body)
+
+
+@router.delete("/bulk", status_code=204)
+async def bulk_delete_categories(
+    body: BulkDeleteCategoryRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    svc = CategoryService(db)
+    await svc.bulk_delete_categories(current_user, body)
 
 
 @router.delete("/{category_id}", status_code=204)

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { listCategories, createCategory, updateCategory, deleteCategory, type Category } from "@/lib/categories";
+import { listCategories, createCategory, updateCategory, deleteCategory, bulkDeleteCategories, type Category } from "@/lib/categories";
 
 export function useCategories(isLoggedIn: boolean) {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -33,5 +33,10 @@ export function useCategories(isLoggedIn: boolean) {
     setCategories((prev) => prev.filter((c) => c.id !== id));
   }, []);
 
-  return { categories, refresh, addCategory, renameCategory, removeCategory };
+  const bulkRemoveCategories = useCallback(async (ids: number[]) => {
+    await bulkDeleteCategories(ids);
+    setCategories((prev) => prev.filter((c) => !ids.includes(c.id)));
+  }, []);
+
+  return { categories, refresh, addCategory, renameCategory, removeCategory, bulkRemoveCategories };
 }

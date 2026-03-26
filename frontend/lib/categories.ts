@@ -27,3 +27,10 @@ export async function updateCategory(id: number, name: string): Promise<Category
 export async function deleteCategory(id: number): Promise<void> {
   await api<void>(`/categories/${id}`, { method: "DELETE" });
 }
+
+export async function bulkDeleteCategories(ids: number[]): Promise<void> {
+  await api<void>("/categories/bulk", {
+    method: "DELETE",
+    body: JSON.stringify({ ids }),
+  });
+}

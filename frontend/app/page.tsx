@@ -262,6 +262,10 @@ export default function HomePage() {
               await categoryState.removeCategory(id);
               await articleState.refresh();
             }}
+            onBulkDeleteCategories={async (ids) => {
+              await categoryState.bulkRemoveCategories(ids);
+              await articleState.refresh();
+            }}
             isLoggedIn={Boolean(sessionState.session)}
             userName={sessionState.session?.name ?? sessionState.session?.email}
             userEmail={sessionState.session?.email}
