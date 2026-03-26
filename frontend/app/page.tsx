@@ -624,7 +624,7 @@ export default function HomePage() {
             </Box>
 
             {/* 콘텐츠 영역 */}
-            <Box sx={{ flex: 1, overflowY: "auto", p: 2 }}>
+            <Box sx={{ flex: 1, overflowY: "auto"}}>
               {combinedError ? (
                 <Alert severity="error" sx={{ mb: 2, mx: { xs: 1.5, sm: 3, lg: 4 } }}>
                   {combinedError}
