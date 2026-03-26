@@ -123,8 +123,8 @@ export const ArticleListItem = memo(function ArticleListItem({ card, categories,
             if (imgSrc !== PLACEHOLDER_SRC) setImgSrc(PLACEHOLDER_SRC);
           }}
           sx={{
-            width: 48,
-            height: 48,
+            width: 64,
+            height: 64,
             borderRadius: 1.5,
             objectFit: "cover",
             flexShrink: 0,
