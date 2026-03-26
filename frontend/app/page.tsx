@@ -21,6 +21,10 @@ import Button from "@mui/material/Button";
 import Checkbox from "@mui/material/Checkbox";
 import CircularProgress from "@mui/material/CircularProgress";
 import CssBaseline from "@mui/material/CssBaseline";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogTitle from "@mui/material/DialogTitle";
 import Divider from "@mui/material/Divider";
 import IconButton from "@mui/material/IconButton";
 import InputAdornment from "@mui/material/InputAdornment";
@@ -44,6 +48,7 @@ import { useArticles } from "@/hooks/useArticles";
 import { useCategories } from "@/hooks/useCategories";
 import { useSession } from "@/hooks/useSession";
 import { useViewMode } from "@/hooks/useViewMode";
+import type { ArticleCard } from "@/types";
 
 const ArticleDetailModal = dynamic(
   () => import("@/components/dialogs/ArticleDetailModal").then((m) => ({ default: m.ArticleDetailModal })),
@@ -85,6 +90,9 @@ export default function HomePage() {
   const [isTitleIconHovered, setIsTitleIconHovered] = useState(false);
   const [isBulkCategoryOpen, setIsBulkCategoryOpen] = useState(false);
   const [bulkMenuAnchor, setBulkMenuAnchor] = useState<HTMLElement | null>(null);
+  const [pendingDeleteCard, setPendingDeleteCard] = useState<ArticleCard | null>(null);
+  const [isBulkDeleteConfirmOpen, setIsBulkDeleteConfirmOpen] = useState(false);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
   const isMobile = useMediaQuery("(max-width:600px)");
   const [viewMode, setViewMode] = useViewMode();
   const filterState = useArticleFilter();
@@ -135,11 +143,15 @@ export default function HomePage() {
   }, [selectAllMode, isAllSelected, articleState.articles]);
 
 
-  async function handleBulkDeleteClick() {
-    const count = selectAllMode ? articleState.totalItems : selectedIds.size;
-    if (!window.confirm(`선택된 ${count}개의 아티클을 삭제할까요?`)) return;
-    await articleState.handleBulkDelete(Array.from(selectedIds), selectAllMode);
-    exitBulkMode();
+  async function handleBulkDeleteConfirm() {
+    setIsBulkDeleting(true);
+    try {
+      await articleState.handleBulkDelete(Array.from(selectedIds), selectAllMode);
+      setIsBulkDeleteConfirmOpen(false);
+      exitBulkMode();
+    } finally {
+      setIsBulkDeleting(false);
+    }
   }
 
   const sidebarTopOffset = useMemo(
@@ -518,7 +530,7 @@ export default function HomePage() {
                         </MenuItem>
                         <Divider />
                         <MenuItem
-                          onClick={() => { setBulkMenuAnchor(null); void handleBulkDeleteClick(); }}
+                          onClick={() => { setBulkMenuAnchor(null); setIsBulkDeleteConfirmOpen(true); }}
                           sx={{ fontSize: 14, color: "error.main" }}
                         >
                           <ListItemIcon><DeleteOutlineIcon sx={{ fontSize: 16 }} color="error" /></ListItemIcon>
@@ -572,7 +584,7 @@ export default function HomePage() {
                       variant="outlined"
                       size="small"
                       disabled={selectedIds.size === 0 && !selectAllMode}
-                      onClick={() => void handleBulkDeleteClick()}
+                      onClick={() => setIsBulkDeleteConfirmOpen(true)}
                       startIcon={<DeleteOutlineIcon fontSize="small" />}
                       sx={{ fontSize: 12, fontWeight: 500, whiteSpace: "nowrap", minWidth: 0, px: 1.5, borderColor: "#fca5a5", color: "error.main", "&:hover": { borderColor: "error.main", bgcolor: "#fff5f5" } }}
                     >
@@ -673,7 +685,7 @@ export default function HomePage() {
                           isBulkMode={isBulkMode}
                           isSelected={selectedIds.has(card.id)}
                           onSelect={toggleSelect}
-                          onDelete={articleState.handleDelete}
+                          onDelete={(card) => { setPendingDeleteCard(card); return Promise.resolve(); }}
                           onToggleRead={articleState.handleToggleRead}
                           onUpdateCategory={articleState.handleUpdateCategory}
                           onAddCategory={categoryState.addCategory}
@@ -693,7 +705,7 @@ export default function HomePage() {
                           isBulkMode={isBulkMode}
                           isSelected={selectedIds.has(card.id)}
                           onSelect={toggleSelect}
-                          onDelete={articleState.handleDelete}
+                          onDelete={(card) => { setPendingDeleteCard(card); return Promise.resolve(); }}
                           onToggleRead={articleState.handleToggleRead}
                           onUpdateCategory={articleState.handleUpdateCategory}
                           onAddCategory={categoryState.addCategory}
@@ -759,6 +771,84 @@ export default function HomePage() {
             exitBulkMode();
           }}
         />
+
+        {/* 개별 아티클 삭제 확인 Dialog */}
+        <Dialog
+          open={pendingDeleteCard !== null}
+          onClose={() => { if (articleState.mutatingArticleId === null) setPendingDeleteCard(null); }}
+          PaperProps={{ elevation: 0, sx: { borderRadius: 2, border: "1px solid #e2e8f0", minWidth: 280 } }}
+        >
+          <DialogTitle sx={{ fontSize: 15, fontWeight: 700, pb: 1 }}>아티클 삭제</DialogTitle>
+          <DialogContent sx={{ pt: 0, pb: 2 }}>
+            <Typography sx={{ fontSize: 13, color: "#475569" }}>
+              이 아티클을 삭제할까요?
+            </Typography>
+            <Typography sx={{ fontSize: 12, color: "#94a3b8", mt: 0.5 }} noWrap>
+              {pendingDeleteCard?.title ?? pendingDeleteCard?.url}
+            </Typography>
+          </DialogContent>
+          <DialogActions sx={{ px: 2, pb: 2, pt: 0, gap: 1 }}>
+            <Button
+              size="small"
+              variant="outlined"
+              disabled={articleState.mutatingArticleId !== null}
+              onClick={() => setPendingDeleteCard(null)}
+              sx={{ fontSize: 13, borderRadius: 1.5, borderColor: "#e2e8f0", color: "#475569", "&:hover": { borderColor: "#cbd5e1", bgcolor: "transparent" } }}
+            >
+              취소
+            </Button>
+            <Button
+              size="small"
+              variant="contained"
+              disabled={articleState.mutatingArticleId !== null}
+              onClick={async () => {
+                if (!pendingDeleteCard) return;
+                await articleState.handleDelete(pendingDeleteCard);
+                setPendingDeleteCard(null);
+              }}
+              sx={{ fontSize: 13, borderRadius: 1.5, bgcolor: "#ef4444", "&:hover": { bgcolor: "#dc2626" }, boxShadow: "none" }}
+            >
+              {articleState.mutatingArticleId !== null ? "삭제 중..." : "삭제"}
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* 벌크 아티클 삭제 확인 Dialog */}
+        <Dialog
+          open={isBulkDeleteConfirmOpen}
+          onClose={() => { if (!isBulkDeleting) setIsBulkDeleteConfirmOpen(false); }}
+          PaperProps={{ elevation: 0, sx: { borderRadius: 2, border: "1px solid #e2e8f0", minWidth: 280 } }}
+        >
+          <DialogTitle sx={{ fontSize: 15, fontWeight: 700, pb: 1 }}>아티클 삭제</DialogTitle>
+          <DialogContent sx={{ pt: 0, pb: 2 }}>
+            <Typography sx={{ fontSize: 13, color: "#475569" }}>
+              선택된 {selectAllMode ? articleState.totalItems : selectedIds.size}개의 아티클을 삭제할까요?
+            </Typography>
+            <Typography sx={{ fontSize: 12, color: "#94a3b8", mt: 0.5 }}>
+              삭제된 아티클은 복구할 수 없습니다.
+            </Typography>
+          </DialogContent>
+          <DialogActions sx={{ px: 2, pb: 2, pt: 0, gap: 1 }}>
+            <Button
+              size="small"
+              variant="outlined"
+              disabled={isBulkDeleting}
+              onClick={() => setIsBulkDeleteConfirmOpen(false)}
+              sx={{ fontSize: 13, borderRadius: 1.5, borderColor: "#e2e8f0", color: "#475569", "&:hover": { borderColor: "#cbd5e1", bgcolor: "transparent" } }}
+            >
+              취소
+            </Button>
+            <Button
+              size="small"
+              variant="contained"
+              disabled={isBulkDeleting}
+              onClick={() => void handleBulkDeleteConfirm()}
+              sx={{ fontSize: 13, borderRadius: 1.5, bgcolor: "#ef4444", "&:hover": { bgcolor: "#dc2626" }, boxShadow: "none" }}
+            >
+              {isBulkDeleting ? "삭제 중..." : "삭제"}
+            </Button>
+          </DialogActions>
+        </Dialog>
       </Box>
     </ThemeProvider>
   );
