@@ -1,16 +1,20 @@
 "use client";
 
-import Image from "next/image";
+import ArKeepLogo from "@/components/ArKeepLogo";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import AddIcon from "@mui/icons-material/Add";
 import BookmarkAddedIcon from "@mui/icons-material/BookmarkAdded";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import GridViewIcon from "@mui/icons-material/GridView";
 import LabelOutlinedIcon from "@mui/icons-material/LabelOutlined";
+import LibraryBooksIcon from "@mui/icons-material/LibraryBooks";
+import MarkAsUnreadIcon from "@mui/icons-material/MarkAsUnread";
 import MenuIcon from "@mui/icons-material/Menu";
 import SearchIcon from "@mui/icons-material/Search";
 import SortIcon from "@mui/icons-material/Sort";
+import VisibilityIcon from "@mui/icons-material/Visibility";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -46,13 +50,17 @@ function ensureGoogleScript(): Promise<void> {
 }
 
 const FAKE_ARTICLES = [
-  { title: "즐겨찾기 - 위키백과, 우리 모두의 백과사전", domain: "ko.wikipedia.org", gradient: "linear-gradient(135deg, #e0e7ff, #c7d2fe)", cat: "개발", time: "7분 전", hasThumb: true },
-  { title: "ArKeep 브랜드 스토링 (읽고싶은 아티클 빠르게 모을 수 있을까?)", domain: "developer.tistory.com", gradient: "linear-gradient(135deg, #fce7f3, #fbcfe8)", cat: "뉴스", time: "7분 전", hasThumb: true },
-  { title: "JavaScript 성능 최적화: 실전 가이드", domain: "developer.mozilla.org", gradient: null, cat: "개발", time: "2시간 전", hasThumb: false },
-  { title: "CSS 레이아웃 완전 정복 — Flexbox부터 Grid까지", domain: "ko.wikipedia.org", gradient: null, cat: "개발", time: "3시간 전", hasThumb: false },
+  { title: "Next.js 15 App Router 완전 정복 — 실전 패턴 가이드", domain: "devlog.io", gradient: "linear-gradient(135deg, #e0e7ff, #c7d2fe)", cat: "개발", time: "21분 전", hasThumb: true },
+  { title: "개발자가 알아야 할 Docker 네트워크 핵심 개념", domain: "infrablog.dev", gradient: "linear-gradient(135deg, #d1fae5, #a7f3d0)", cat: "개발", time: "2시간 전", hasThumb: true },
+  { title: "스타트업 초기 투자 유치, 무엇을 먼저 준비해야 하나", domain: "venturenote.kr", gradient: "linear-gradient(135deg, #fef3c7, #fde68a)", cat: "투자", time: "4시간 전", hasThumb: true },
+  { title: "숏폼 콘텐츠 제작의 기술 — 조회수를 끌어올리는 편집 원칙", domain: "contentlab.kr", gradient: "linear-gradient(135deg, #fee2e2, #fecaca)", cat: "영상", time: "6시간 전", hasThumb: true },
+  { title: "TypeScript 타입 시스템 깊게 파기 — 제네릭과 유틸리티 타입", domain: "devlog.io", gradient: null, cat: "개발", time: "8시간 전", hasThumb: false },
+  { title: "2025 글로벌 VC 투자 심리 변화와 국내 시장 영향", domain: "venturenote.kr", gradient: null, cat: "투자", time: "10시간 전", hasThumb: false },
+  { title: "IT 업계 채용 시장 변화 — 개발자 수요는 어디로 향하나", domain: "newswave.co.kr", gradient: null, cat: "뉴스", time: "12시간 전", hasThumb: false },
+  { title: "영상 썸네일 A/B 테스트로 클릭률 2배 높인 방법", domain: "contentlab.kr", gradient: null, cat: "영상", time: "1일 전", hasThumb: false },
 ];
 
-const FAKE_CATEGORIES = ["개발", "뉴스", "바이브코딩", "카테고리", "테스트"];
+const FAKE_CATEGORIES = ["뉴스", "영상", "투자", "개발"];
 
 const FEATURES = [
   {
@@ -99,53 +107,27 @@ function AppMockup() {
           ))}
         </Stack>
         <Box sx={{ flex: 1, bgcolor: "#ffffff", borderRadius: 1, height: 22, display: "flex", alignItems: "center", px: 1.5, gap: 0.5, border: "1px solid #e2e8f0" }}>
-          <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: "#137fec" }} />
-          <Typography sx={{ fontSize: 10, color: "#94a3b8", fontFamily: "monospace" }}>arkeep.net</Typography>
+          <Typography sx={{ fontSize: 10, color: "#94a3b8", fontFamily: "monospace" }}>https://www.arkeep.net</Typography>
         </Box>
       </Box>
 
-      <Box sx={{ bgcolor: "#ffffff", display: "flex", flexDirection: "column" }}>
-        {/* Topbar */}
-        <Box sx={{ bgcolor: "#ffffff", borderBottom: "1px solid #f1f5f9", px: 2, height: 46, display: "flex", alignItems: "center", gap: 1 }}>
-          <MenuIcon sx={{ fontSize: 16, color: "#64748b", mr: 0.25 }} />
-          {/* Logo: blue circle with A */}
-          <Stack direction="row" spacing={0.75} alignItems="center" sx={{ mr: 0.5, flexShrink: 0 }}>
-            <Box sx={{ width: 20, height: 20, borderRadius: "50%", bgcolor: "#137fec", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <Typography sx={{ fontSize: 9, fontWeight: 800, color: "#fff", lineHeight: 1 }}>A</Typography>
-            </Box>
-            <Typography sx={{ fontSize: 11, fontWeight: 700, color: "#1e293b", letterSpacing: "-0.3px" }}>ArKeep</Typography>
+      <Box sx={{ bgcolor: "#ffffff", display: "flex" }}>
+        {/* Sidebar */}
+        <Box sx={{ width: 148, flexShrink: 0, bgcolor: "#f8fafc", borderRight: "1px solid #f1f5f9", p: 1.5, display: "flex", flexDirection: "column", gap: 0.25 }}>
+          {/* User avatar */}
+          <Stack direction="row" spacing={0.75} alignItems="center" sx={{ mb: 1.5 }}>
+            <AccountCircleIcon sx={{ fontSize: 22, color: "#94a3b8", flexShrink: 0 }} />
+            <Typography sx={{ fontSize: 9, fontWeight: 600, color: "#334155" }}>사용자</Typography>
           </Stack>
-          <Box sx={{ flex: "0 1 260px", height: 24, bgcolor: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 1, display: "flex", alignItems: "center", px: 1, gap: 0.5 }}>
-            <SearchIcon sx={{ fontSize: 11, color: "#94a3b8" }} />
-            <Typography sx={{ fontSize: 9, color: "#cbd5e1" }}>검색</Typography>
-          </Box>
-          <Box sx={{ flex: 1 }} />
-          <Box sx={{ bgcolor: "#137fec", borderRadius: 1, px: 1.25, height: 24, display: "flex", alignItems: "center", gap: 0.5, flexShrink: 0 }}>
-            <AddIcon sx={{ fontSize: 11, color: "#ffffff" }} />
-            <Typography sx={{ fontSize: 9, color: "#ffffff", fontWeight: 700 }}>추가</Typography>
-          </Box>
-        </Box>
-
-        {/* Body: sidebar + main */}
-        <Box sx={{ display: "flex", height: 310 }}>
-          {/* Sidebar */}
-          <Box sx={{ width: 148, flexShrink: 0, bgcolor: "#f8fafc", borderRight: "1px solid #f1f5f9", p: 1.5, display: "flex", flexDirection: "column", gap: 0.25 }}>
-            {/* User avatar */}
-            <Stack direction="row" spacing={0.75} alignItems="center" sx={{ mb: 1.5 }}>
-              <Box sx={{ width: 22, height: 22, borderRadius: "50%", bgcolor: "#137fec", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                <Typography sx={{ fontSize: 8, fontWeight: 700, color: "#fff" }}>이영</Typography>
-              </Box>
-              <Typography sx={{ fontSize: 9, fontWeight: 600, color: "#334155" }}>이영준</Typography>
-            </Stack>
 
             {/* Filter items */}
             {[
-              { label: "모든 아티클", active: false },
-              { label: "읽은 아티클", active: false },
-              { label: "미열람 아티클", active: true },
-            ].map(({ label, active }) => (
+              { label: "모든 아티클", active: false, icon: <LibraryBooksIcon sx={{ fontSize: 11 }} /> },
+              { label: "열람 아티클", active: false, icon: <VisibilityIcon sx={{ fontSize: 11 }} /> },
+              { label: "미열람 아티클", active: true, icon: <MarkAsUnreadIcon sx={{ fontSize: 11 }} /> },
+            ].map(({ label, active, icon }) => (
               <Box key={label} sx={{ px: 1, py: "3px", borderRadius: 1, bgcolor: active ? "#eff6ff" : "transparent", display: "flex", alignItems: "center", gap: 0.75 }}>
-                <Box sx={{ width: 5, height: 5, borderRadius: "50%", border: `1.5px solid ${active ? "#137fec" : "#cbd5e1"}`, bgcolor: active ? "#137fec" : "transparent", flexShrink: 0 }} />
+                <Box sx={{ color: active ? "#137fec" : "#94a3b8", display: "flex", alignItems: "center", flexShrink: 0 }}>{icon}</Box>
                 <Typography sx={{ fontSize: 9, color: active ? "#137fec" : "#64748b", fontWeight: active ? 600 : 400 }}>{label}</Typography>
               </Box>
             ))}
@@ -164,20 +146,37 @@ function AppMockup() {
             {/* Category items */}
             {FAKE_CATEGORIES.map((cat) => (
               <Box key={cat} sx={{ px: 1, py: "3px", borderRadius: 1, display: "flex", alignItems: "center", gap: 0.75 }}>
-                <LabelOutlinedIcon sx={{ fontSize: 9, color: "#94a3b8", flexShrink: 0 }} />
                 <Typography sx={{ fontSize: 9, color: "#64748b" }}>{cat}</Typography>
               </Box>
             ))}
+        </Box>
+
+        {/* Main content */}
+        <Box sx={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+          {/* Topbar */}
+          <Box sx={{ bgcolor: "#ffffff", borderBottom: "1px solid #f1f5f9", px: 2, height: 46, display: "flex", alignItems: "center", gap: 1 }}>
+            <MenuIcon sx={{ fontSize: 16, color: "#64748b", mr: 0.25 }} />
+            <Stack direction="row" spacing={0.75} alignItems="center" sx={{ mr: 0.5, flexShrink: 0 }}>
+              <ArKeepLogo size={20} />
+              <Typography sx={{ fontSize: 11, fontWeight: 700, color: "#1e293b", letterSpacing: "-0.3px" }}>ArKeep</Typography>
+            </Stack>
+            <Box sx={{ flex: "0 1 260px", height: 24, bgcolor: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 1, display: "flex", alignItems: "center", px: 1, gap: 0.5 }}>
+              <SearchIcon sx={{ fontSize: 11, color: "#94a3b8" }} />
+              <Typography sx={{ fontSize: 9, color: "#cbd5e1" }}>검색</Typography>
+            </Box>
+            <Box sx={{ flex: 1 }} />
+            <Box sx={{ bgcolor: "#137fec", borderRadius: 1, px: 1.25, height: 24, display: "flex", alignItems: "center", gap: 0.5, flexShrink: 0 }}>
+              <AddIcon sx={{ fontSize: 11, color: "#ffffff" }} />
+              <Typography sx={{ fontSize: 9, color: "#ffffff", fontWeight: 700 }}>추가</Typography>
+            </Box>
           </Box>
 
-          {/* Main content */}
-          <Box sx={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
-            {/* Title bar */}
-            <Box sx={{ px: 2, height: 34, display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid #f1f5f9" }}>
+          {/* Title bar */}
+          <Box sx={{ px: 2, height: 34, display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid #f1f5f9" }}>
               <Stack direction="row" spacing={0.75} alignItems="center">
-                <Box sx={{ width: 12, height: 12, borderRadius: "50%", border: "1.5px solid #137fec" }} />
+                <MarkAsUnreadIcon sx={{ fontSize: 13, color: "#137fec" }} />
                 <Typography sx={{ fontSize: 10, fontWeight: 500, color: "#1e293b" }}>모든 카테고리</Typography>
-                <Typography sx={{ fontSize: 10, color: "#94a3b8" }}>4개</Typography>
+                <Typography sx={{ fontSize: 10, color: "#94a3b8" }}>8개</Typography>
               </Stack>
               <Stack direction="row" spacing={0.5}>
                 <SortIcon sx={{ fontSize: 13, color: "#94a3b8" }} />
@@ -185,41 +184,34 @@ function AppMockup() {
               </Stack>
             </Box>
 
-            {/* Card grid */}
-            <Box sx={{ flex: 1, p: 1.5, display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 1.5, alignContent: "start", bgcolor: "#ffffff" }}>
-              {FAKE_ARTICLES.map((a) => (
-                <Box key={a.title} sx={{ bgcolor: "#ffffff", borderRadius: 1.5, border: "1px solid #e2e8f0", overflow: "hidden", display: "flex", flexDirection: "column" }}>
-                  {/* Thumbnail */}
-                  <Box sx={{ height: 72, position: "relative", bgcolor: "#f1f5f9", overflow: "hidden" }}>
-                    {a.hasThumb && a.gradient ? (
-                      <Box sx={{ width: "100%", height: "100%", background: a.gradient }} />
-                    ) : (
-                      /* Gray striped placeholder */
-                      <Box sx={{ width: "100%", height: "100%", background: "repeating-linear-gradient(135deg, #e2e8f0 0px, #e2e8f0 2px, #f1f5f9 2px, #f1f5f9 12px)" }} />
-                    )}
-                    {/* 미열람 badge */}
-                    <Box sx={{ position: "absolute", top: 5, left: 5, bgcolor: "#137fec", borderRadius: 10, px: 0.75, py: "1px" }}>
-                      <Typography sx={{ fontSize: 7, color: "#ffffff", fontWeight: 700 }}>미열람</Typography>
-                    </Box>
-                  </Box>
-
-                  {/* Content */}
-                  <Box sx={{ p: 1, flex: 1, display: "flex", flexDirection: "column", gap: 0.5 }}>
-                    {/* Category pill */}
-                    <Box sx={{ display: "inline-flex", alignSelf: "flex-start", bgcolor: "#eff6ff", borderRadius: 10, px: 0.75, py: "1px" }}>
-                      <Typography sx={{ fontSize: 7, color: "#137fec", fontWeight: 600 }}>{a.cat}</Typography>
-                    </Box>
-                    <Typography sx={{ fontSize: 8.5, fontWeight: 600, color: "#1e293b", lineHeight: 1.4, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
-                      {a.title}
-                    </Typography>
-                    <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mt: "auto" }}>
-                      <Typography sx={{ fontSize: 7.5, color: "#94a3b8" }}>{a.domain}</Typography>
-                      <Typography sx={{ fontSize: 7.5, color: "#94a3b8" }}>{a.time}</Typography>
-                    </Stack>
+          {/* Card grid */}
+          <Box sx={{ flex: 1, p: 1.5, display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 1.5, alignContent: "start", bgcolor: "#ffffff" }}>
+            {FAKE_ARTICLES.map((a) => (
+              <Box key={a.title} sx={{ bgcolor: "#ffffff", borderRadius: 1.5, border: "1px solid #e2e8f0", overflow: "hidden", display: "flex", flexDirection: "column" }}>
+                <Box sx={{ height: 72, position: "relative", bgcolor: "#f1f5f9", overflow: "hidden" }}>
+                  {a.hasThumb && a.gradient ? (
+                    <Box sx={{ width: "100%", height: "100%", background: a.gradient }} />
+                  ) : (
+                    <Box sx={{ width: "100%", height: "100%", background: "repeating-linear-gradient(135deg, #e2e8f0 0px, #e2e8f0 2px, #f1f5f9 2px, #f1f5f9 12px)" }} />
+                  )}
+                  <Box sx={{ position: "absolute", top: 5, left: 5, bgcolor: "#137fec", borderRadius: 10, px: 0.75, py: "1px" }}>
+                    <Typography sx={{ fontSize: 7, color: "#ffffff", fontWeight: 700 }}>미열람</Typography>
                   </Box>
                 </Box>
-              ))}
-            </Box>
+                <Box sx={{ p: 1, flex: 1, display: "flex", flexDirection: "column", gap: 0.5 }}>
+                  <Box sx={{ display: "inline-flex", alignSelf: "flex-start", bgcolor: "#eff6ff", borderRadius: 10, px: 0.75, py: "1px" }}>
+                    <Typography sx={{ fontSize: 7, color: "#137fec", fontWeight: 600 }}>{a.cat}</Typography>
+                  </Box>
+                  <Typography sx={{ fontSize: 8.5, fontWeight: 600, color: "#1e293b", lineHeight: 1.4, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                    {a.title}
+                  </Typography>
+                  <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mt: "auto" }}>
+                    <Typography sx={{ fontSize: 7.5, color: "#94a3b8" }}>{a.domain}</Typography>
+                    <Typography sx={{ fontSize: 7.5, color: "#94a3b8" }}>{a.time}</Typography>
+                  </Stack>
+                </Box>
+              </Box>
+            ))}
           </Box>
         </Box>
       </Box>
@@ -312,7 +304,7 @@ export default function LandingPage() {
         }}
       >
         <Stack direction="row" spacing={1} alignItems="center">
-          <Image src="/icon.svg" alt="ArKeep" width={26} height={26} />
+          <ArKeepLogo size={26} />
           <Typography sx={{ fontWeight: 700, fontSize: 16, color: "#1e293b", letterSpacing: "-0.3px" }}>
             ArKeep
           </Typography>
@@ -496,7 +488,7 @@ export default function LandingPage() {
         }}
       >
         <Stack direction="row" spacing={1} alignItems="center">
-          <Image src="/icon.svg" alt="ArKeep" width={18} height={18} />
+          <ArKeepLogo size={18} />
           <Typography sx={{ fontSize: 13, color: "#94a3b8", fontWeight: 600 }}>ArKeep</Typography>
         </Stack>
         <Typography sx={{ fontSize: 12, color: "#cbd5e1" }}>

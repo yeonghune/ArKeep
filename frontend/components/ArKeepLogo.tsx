@@ -1,0 +1,21 @@
+interface ArKeepLogoProps {
+  size?: number;
+}
+
+export default function ArKeepLogo({ size = 24 }: ArKeepLogoProps) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 64 64"
+      width={size}
+      height={size}
+      style={{ display: "block", flexShrink: 0 }}
+    >
+      <circle cx="32" cy="32" r="30" fill="#1976d2" />
+      <path
+        d="M22 16c-1.1 0-2 .9-2 2v29.2c0 1.5 1.7 2.3 2.8 1.4L32 42l9.2 6.6c1.1.9 2.8.1 2.8-1.4V18c0-1.1-.9-2-2-2H22z"
+        fill="#fff"
+      />
+    </svg>
+  );
+}

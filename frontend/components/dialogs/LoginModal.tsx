@@ -1,4 +1,4 @@
-import Image from "next/image";
+import ArKeepLogo from "@/components/ArKeepLogo";
 import { useEffect, useRef, useState } from "react";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
@@ -171,7 +171,7 @@ export function LoginModal({ open, onClose, onGoogleCredential }: Props) {
       <Box sx={{ p: { xs: 3, sm: 5 } }}>
         <Box sx={{ borderRadius: 4, bgcolor: "white", p: { xs: 3, sm: 5 }, textAlign: "center", border: "1px solid #e2e8f0" }}>
           <Box sx={{ mx: "auto", mb: 3, width: 72, height: 72 }}>
-            <Image src="/icon.svg" alt="ArKeep" width={72} height={72} />
+            <ArKeepLogo size={72} />
           </Box>
 
           <Typography sx={{ fontSize: 30, fontWeight: 700, color: "#111827", lineHeight: 1.15, mb: 1.5 }}>계정 연결</Typography>
