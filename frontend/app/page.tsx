@@ -626,7 +626,7 @@ export default function HomePage() {
             {/* 콘텐츠 영역 */}
             <Box sx={{ flex: 1, overflowY: "auto", p: 2 }}>
               {combinedError ? (
-                <Alert severity="error" sx={{ mb: 2 }}>
+                <Alert severity="error" sx={{ mb: 2, mx: { xs: 1.5, sm: 3, lg: 4 } }}>
                   {combinedError}
                 </Alert>
               ) : null}
@@ -636,7 +636,7 @@ export default function HomePage() {
                   <CircularProgress size={28} />
                 </Box>
               ) : articleState.articles.length === 0 ? (
-                <Box sx={{ display: "grid", placeItems: "center", py: 12, gap: 2 }}>
+                <Box sx={{ display: "grid", placeItems: "center", py: 12, gap: 2, px: { xs: 1.5, sm: 3, lg: 4 } }}>
                   <Typography
                     sx={{ color: "#64748b", fontSize: { xs: 18, sm: 20 }, fontWeight: 600, textAlign: "center" }}
                   >
@@ -653,6 +653,7 @@ export default function HomePage() {
                   {viewMode === "card" ? (
                     <Box
                       sx={{
+                        p: 2,
                         display: "grid",
                         gap: 3,
                         gridTemplateColumns: {
@@ -681,7 +682,7 @@ export default function HomePage() {
                       ))}
                     </Box>
                   ) : (
-                    <Box sx={{ border: "1px solid #e2e8f0", borderRadius: 3, overflow: "hidden" }}>
+                    <Box>
                       {articleState.articles.map((card) => (
                         <ArticleListItem
                           key={card.id}
