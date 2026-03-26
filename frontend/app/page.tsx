@@ -220,9 +220,9 @@ function AppMockup() {
           {/* Mobile: list view */}
           <Box sx={{ display: { xs: "flex", sm: "none" }, flexDirection: "column", bgcolor: "#ffffff" }}>
             {FAKE_ARTICLES.map((a) => (
-              <Stack key={a.title} direction="row" alignItems="center" spacing={1} sx={{ px: 1.5, py: 1, borderBottom: "1px solid #f1f5f9", minHeight: 58 }}>
+              <Box key={a.title} sx={{ display: "flex", flexDirection: "row", alignItems: "center", px: 1.5, height: 64, borderBottom: "1px solid #f1f5f9", gap: 1, overflow: "hidden" }}>
                 {/* Thumbnail */}
-                <Box sx={{ width: 44, height: 44, borderRadius: 1, flexShrink: 0, overflow: "hidden", bgcolor: "#f1f5f9" }}>
+                <Box sx={{ width: 48, height: 48, borderRadius: 1, flexShrink: 0, overflow: "hidden", bgcolor: "#f1f5f9" }}>
                   {a.hasThumb && a.gradient ? (
                     <Box sx={{ width: "100%", height: "100%", background: a.gradient }} />
                   ) : (
@@ -230,24 +230,26 @@ function AppMockup() {
                   )}
                 </Box>
                 {/* Text */}
-                <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Box sx={{ flex: 1, minWidth: 0, overflow: "hidden" }}>
                   <Typography sx={{ fontSize: 9, fontWeight: 600, color: "#1e293b", lineHeight: 1.4, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
                     {a.title}
                   </Typography>
-                  <Stack direction="row" spacing={0.5} alignItems="center" sx={{ mt: 0.25 }}>
-                    <Typography sx={{ fontSize: 7.5, color: "#64748b" }}>{a.domain}</Typography>
-                    <Typography sx={{ fontSize: 7.5, color: "#cbd5e1" }}>·</Typography>
-                    <Box sx={{ bgcolor: "#eff6ff", borderRadius: 10, px: 0.5 }}>
+                  <Box sx={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "3px", mt: 0.4, overflow: "hidden" }}>
+                    <Typography sx={{ fontSize: 7.5, color: "#64748b", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 55 }}>{a.domain}</Typography>
+                    <Typography sx={{ fontSize: 7.5, color: "#cbd5e1", flexShrink: 0 }}>·</Typography>
+                    <Box sx={{ bgcolor: "#eff6ff", borderRadius: 10, px: 0.5, flexShrink: 0 }}>
                       <Typography sx={{ fontSize: 7, color: "#137fec", fontWeight: 600 }}>{a.cat}</Typography>
                     </Box>
-                    <Typography sx={{ fontSize: 7.5, color: "#cbd5e1" }}>·</Typography>
-                    <Typography sx={{ fontSize: 7.5, color: "#94a3b8" }}>{a.time}</Typography>
-                  </Stack>
+                    <Typography sx={{ fontSize: 7.5, color: "#cbd5e1", flexShrink: 0 }}>·</Typography>
+                    <Typography sx={{ fontSize: 7.5, color: "#94a3b8", flexShrink: 0, whiteSpace: "nowrap" }}>{a.time}</Typography>
+                  </Box>
                 </Box>
                 {/* Icons */}
-                <OpenInNewIcon sx={{ fontSize: 11, color: "#94a3b8", flexShrink: 0 }} />
-                <MoreVertIcon sx={{ fontSize: 11, color: "#94a3b8", flexShrink: 0 }} />
-              </Stack>
+                <Box sx={{ display: "flex", gap: "2px", flexShrink: 0 }}>
+                  <OpenInNewIcon sx={{ fontSize: 11, color: "#94a3b8" }} />
+                  <MoreVertIcon sx={{ fontSize: 11, color: "#94a3b8" }} />
+                </Box>
+              </Box>
             ))}
           </Box>
         </Box>

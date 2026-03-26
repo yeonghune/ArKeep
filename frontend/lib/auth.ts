@@ -17,3 +17,9 @@ export async function logout(): Promise<void> {
     method: "POST"
   });
 }
+
+export async function deleteAccount(): Promise<void> {
+  await api<void>("/auth/me", {
+    method: "DELETE"
+  });
+}

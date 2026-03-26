@@ -174,6 +174,11 @@ class AuthService:
 
         return AuthResponse(token=access_token, email=user.provider_user_id), new_jti
 
+    async def delete_account(self, user: User) -> None:
+        """Delete user and all associated data (cascade handles articles/tokens)."""
+        await self.db.delete(user)
+        await self.db.commit()
+
     async def logout(self, refresh_jti: str | None) -> None:
         """Revoke the given refresh token (and its family)."""
         if not refresh_jti:

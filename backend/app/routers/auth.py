@@ -63,6 +63,18 @@ async def refresh_token(
     return auth_response
 
 
+@router.delete("/me", status_code=204)
+async def delete_account(
+    response: Response,
+    db: AsyncSession = Depends(get_db),
+    arkeep_refresh_token: str | None = Cookie(default=None),
+    current_user: User = Depends(get_current_user),
+) -> None:
+    svc = AuthService(db)
+    await svc.delete_account(current_user)
+    _clear_refresh_cookie(response)
+
+
 @router.post("/logout")
 async def logout(
     response: Response,
