@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import AddIcon from "@mui/icons-material/Add";
 import BookmarkAddedIcon from "@mui/icons-material/BookmarkAdded";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
+import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import GridViewIcon from "@mui/icons-material/GridView";
 import LabelOutlinedIcon from "@mui/icons-material/LabelOutlined";
@@ -112,8 +114,8 @@ function AppMockup() {
       </Box>
 
       <Box sx={{ bgcolor: "#ffffff", display: "flex" }}>
-        {/* Sidebar */}
-        <Box sx={{ width: 148, flexShrink: 0, bgcolor: "#f8fafc", borderRight: "1px solid #f1f5f9", p: 1.5, display: "flex", flexDirection: "column", gap: 0.25 }}>
+        {/* Sidebar - 모바일에서 숨김 */}
+        <Box sx={{ width: 148, flexShrink: 0, bgcolor: "#f8fafc", borderRight: "1px solid #f1f5f9", p: 1.5, display: { xs: "none", sm: "flex" }, flexDirection: "column", gap: 0.25 }}>
           {/* User avatar */}
           <Stack direction="row" spacing={0.75} alignItems="center" sx={{ mb: 1.5 }}>
             <AccountCircleIcon sx={{ fontSize: 22, color: "#94a3b8", flexShrink: 0 }} />
@@ -184,8 +186,9 @@ function AppMockup() {
               </Stack>
             </Box>
 
-          {/* Card grid */}
-          <Box sx={{ flex: 1, p: 1.5, display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 1.5, alignContent: "start", bgcolor: "#ffffff" }}>
+          {/* Card grid (desktop) / List (mobile) */}
+          {/* Desktop: 4-col card grid */}
+          <Box sx={{ display: { xs: "none", sm: "grid" }, flex: 1, p: 1.5, gridTemplateColumns: "repeat(4, 1fr)", gap: 1.5, alignContent: "start", bgcolor: "#ffffff" }}>
             {FAKE_ARTICLES.map((a) => (
               <Box key={a.title} sx={{ bgcolor: "#ffffff", borderRadius: 1.5, border: "1px solid #e2e8f0", overflow: "hidden", display: "flex", flexDirection: "column" }}>
                 <Box sx={{ height: 72, position: "relative", bgcolor: "#f1f5f9", overflow: "hidden" }}>
@@ -211,6 +214,40 @@ function AppMockup() {
                   </Stack>
                 </Box>
               </Box>
+            ))}
+          </Box>
+
+          {/* Mobile: list view */}
+          <Box sx={{ display: { xs: "flex", sm: "none" }, flexDirection: "column", bgcolor: "#ffffff" }}>
+            {FAKE_ARTICLES.map((a) => (
+              <Stack key={a.title} direction="row" alignItems="center" spacing={1} sx={{ px: 1.5, py: 1, borderBottom: "1px solid #f1f5f9", minHeight: 58 }}>
+                {/* Thumbnail */}
+                <Box sx={{ width: 44, height: 44, borderRadius: 1, flexShrink: 0, overflow: "hidden", bgcolor: "#f1f5f9" }}>
+                  {a.hasThumb && a.gradient ? (
+                    <Box sx={{ width: "100%", height: "100%", background: a.gradient }} />
+                  ) : (
+                    <Box sx={{ width: "100%", height: "100%", background: "repeating-linear-gradient(135deg, #e2e8f0 0px, #e2e8f0 2px, #f1f5f9 2px, #f1f5f9 12px)" }} />
+                  )}
+                </Box>
+                {/* Text */}
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <Typography sx={{ fontSize: 9, fontWeight: 600, color: "#1e293b", lineHeight: 1.4, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                    {a.title}
+                  </Typography>
+                  <Stack direction="row" spacing={0.5} alignItems="center" sx={{ mt: 0.25 }}>
+                    <Typography sx={{ fontSize: 7.5, color: "#64748b" }}>{a.domain}</Typography>
+                    <Typography sx={{ fontSize: 7.5, color: "#cbd5e1" }}>·</Typography>
+                    <Box sx={{ bgcolor: "#eff6ff", borderRadius: 10, px: 0.5 }}>
+                      <Typography sx={{ fontSize: 7, color: "#137fec", fontWeight: 600 }}>{a.cat}</Typography>
+                    </Box>
+                    <Typography sx={{ fontSize: 7.5, color: "#cbd5e1" }}>·</Typography>
+                    <Typography sx={{ fontSize: 7.5, color: "#94a3b8" }}>{a.time}</Typography>
+                  </Stack>
+                </Box>
+                {/* Icons */}
+                <OpenInNewIcon sx={{ fontSize: 11, color: "#94a3b8", flexShrink: 0 }} />
+                <MoreVertIcon sx={{ fontSize: 11, color: "#94a3b8", flexShrink: 0 }} />
+              </Stack>
             ))}
           </Box>
         </Box>
@@ -279,7 +316,7 @@ export default function LandingPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionState.isHydrated]);
 
-  if (!sessionState.isHydrated) {
+  if (!sessionState.isHydrated || sessionState.session) {
     return (
       <Box sx={{ display: "grid", placeItems: "center", height: "100dvh" }}>
         <CircularProgress size={28} sx={{ color: "#137fec" }} />
