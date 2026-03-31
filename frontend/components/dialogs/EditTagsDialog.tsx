@@ -1,14 +1,33 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import CloseIcon from "@mui/icons-material/Close";
-import Autocomplete from "@mui/material/Autocomplete";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import Chip from "@mui/material/Chip";
 import Dialog from "@mui/material/Dialog";
 import IconButton from "@mui/material/IconButton";
 import Stack from "@mui/material/Stack";
-import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
+
+import { TagInputField } from "./TagInputField";
+
+const MAX_TAGS = 5;
+const MAX_TAG_LEN = 20;
+const TAG_ALLOWED = /^[가-힣ㄱ-ㅎㅏ-ㅣa-zA-Z0-9]+$/;
+
+function normalizeTags(raw: string[]): string[] {
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const t of raw) {
+    const v = String(t ?? "").trim().replace(/^#+/, "");
+    if (!v) continue;
+    if (v.length > MAX_TAG_LEN) continue;
+    if (!TAG_ALLOWED.test(v)) continue;
+    if (seen.has(v)) continue;
+    seen.add(v);
+    out.push(v);
+    if (out.length >= MAX_TAGS) break;
+  }
+  return out;
+}
 
 type Props = {
   open: boolean;
@@ -18,34 +37,11 @@ type Props = {
   onSave: (tags: string[]) => Promise<void>;
 };
 
-const MAX_TAGS = 5;
-const MAX_TAG_LEN = 20;
-
-function normalizeTags(raw: string[]): string[] {
-  const out: string[] = [];
-  const seen = new Set<string>();
-  for (const t of raw) {
-    const v = String(t ?? "").trim().replace(/\s+/g, " ").replace(/^#+/, "");
-    if (!v) continue;
-    if (v.length > MAX_TAG_LEN) continue;
-    if (seen.has(v)) continue;
-    seen.add(v);
-    out.push(v);
-    if (out.length >= MAX_TAGS) break;
-  }
-  return out;
-}
-
 export function EditTagsDialog({ open, title, initialTags, onClose, onSave }: Props) {
   const [tags, setTags] = useState<string[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const helperText = useMemo(() => {
-    if (error) return error;
-    return `최대 ${MAX_TAGS}개 · 태그당 ${MAX_TAG_LEN}자`;
-  }, [error]);
 
   useEffect(() => {
     if (!open) return;
@@ -56,10 +52,28 @@ export function EditTagsDialog({ open, title, initialTags, onClose, onSave }: Pr
   }, [open, initialTags]);
 
   async function handleSubmit() {
+    if (inputValue.trim()) {
+      const v = inputValue.trim().replace(/^#+/, "");
+      if (!TAG_ALLOWED.test(v)) {
+        setError("태그는 한글, 영어, 숫자만 입력할 수 있습니다.");
+        return;
+      }
+      if (v.length > MAX_TAG_LEN) {
+        setError(`태그는 ${MAX_TAG_LEN}자를 초과할 수 없습니다.`);
+        return;
+      }
+      if (tags.includes(v)) {
+        setError("이미 추가된 태그입니다.");
+        return;
+      }
+    }
     setError(null);
     setIsSubmitting(true);
     try {
-      await onSave(normalizeTags(tags));
+      const finalTags = inputValue.trim()
+        ? normalizeTags([...tags, inputValue])
+        : normalizeTags(tags);
+      await onSave(finalTags);
       onClose();
     } catch (e) {
       const message = e instanceof Error ? e.message : "태그 저장에 실패했습니다.";
@@ -75,7 +89,7 @@ export function EditTagsDialog({ open, title, initialTags, onClose, onSave }: Pr
       onClose={onClose}
       maxWidth="sm"
       fullWidth
-      PaperProps={{ sx: { borderRadius: 3, overflow: "hidden" } }}
+      slotProps={{ paper: { sx: { borderRadius: 3, overflow: "hidden" } } }}
     >
       <Box
         component="form"
@@ -86,59 +100,20 @@ export function EditTagsDialog({ open, title, initialTags, onClose, onSave }: Pr
         sx={{ p: { xs: 2, sm: 3 } }}
       >
         <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 2 }}>
-          <Box sx={{ minWidth: 0 }}>
-            <Typography sx={{ fontSize: 22, fontWeight: 800, lineHeight: 1.2 }}>{title}</Typography>
-            <Typography sx={{ mt: 0.5, color: "#94a3b8", fontSize: 13 }}>
-              Enter 또는 콤마(,)로 태그를 추가할 수 있어요.
-            </Typography>
-          </Box>
+          <Typography sx={{ fontSize: 22, fontWeight: 800, lineHeight: 1.2 }}>{title}</Typography>
           <IconButton onClick={onClose} aria-label="태그 수정 모달 닫기">
             <CloseIcon />
           </IconButton>
         </Stack>
 
         <Typography sx={{ fontSize: 13, color: "#64748b", mb: 0.75 }}>태그 (선택)</Typography>
-        <Autocomplete
-          multiple
-          freeSolo
-          options={[]}
-          value={tags}
+        <TagInputField
+          tags={tags}
           inputValue={inputValue}
-          onInputChange={(_, v) => setInputValue(v)}
-          onChange={(_, nextValue) => {
-            const normalized = normalizeTags(nextValue as string[]);
-            if ((nextValue as string[]).length > MAX_TAGS) setError(`태그는 최대 ${MAX_TAGS}개까지 가능합니다.`);
-            else setError(null);
-            setTags(normalized);
-          }}
-          renderTags={(value, getTagProps) =>
-            value.map((option: string, index: number) => (
-              <Chip
-                variant="outlined"
-                size="small"
-                label={`#${option}`}
-                {...getTagProps({ index })}
-                key={`${option}-${index}`}
-              />
-            ))
-          }
-          renderInput={(params) => (
-            <TextField
-              {...params}
-              placeholder={tags.length >= MAX_TAGS ? `최대 ${MAX_TAGS}개까지` : "예) Next.js, Docker"}
-              error={Boolean(error)}
-              helperText={helperText}
-              onKeyDown={(e) => {
-                if (e.key === "," && inputValue.trim().length > 0) {
-                  e.preventDefault();
-                  const merged = normalizeTags([...tags, inputValue]);
-                  if (merged.length >= MAX_TAGS && normalizeTags([...tags, inputValue]).length === tags.length) return;
-                  setTags(merged);
-                  setInputValue("");
-                }
-              }}
-            />
-          )}
+          error={error}
+          onTagsChange={setTags}
+          onInputChange={setInputValue}
+          onError={setError}
         />
 
         <Stack direction="row" justifyContent="flex-end" spacing={1.5} sx={{ mt: 2 }}>
@@ -153,4 +128,3 @@ export function EditTagsDialog({ open, title, initialTags, onClose, onSave }: Pr
     </Dialog>
   );
 }
-

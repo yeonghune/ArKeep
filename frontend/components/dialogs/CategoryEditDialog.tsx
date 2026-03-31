@@ -1,16 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Autocomplete from "@mui/material/Autocomplete";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
-import TextField from "@mui/material/TextField";
 import type { Category } from "@/lib/categories";
 import type { ArticleCard } from "@/types";
+import { CategoryInputField } from "./CategoryInputField";
 
 type Props = {
   open: boolean;
@@ -90,35 +89,14 @@ export function CategoryEditDialog({ open, card, categories, isBusy, onClose, on
       >
         <DialogTitle>카테고리 수정</DialogTitle>
         <DialogContent>
-          <Autocomplete
-            freeSolo
+          <CategoryInputField
+            value={categoryValue}
+            onChange={(v) => { setCategoryValue(v); setCategoryError(null); }}
             options={categories.map((c) => c.name)}
-            value={categoryValue ?? ""}
-            onChange={(_, value) => {
-              setCategoryValue(value || null);
-              setCategoryError(null);
-            }}
-            onInputChange={(_, newValue, reason) => {
-              if (reason === "input") {
-                setCategoryValue(newValue || null);
-                setCategoryError(null);
-              }
-            }}
-            noOptionsText="직접 입력하여 새 카테고리를 만들 수 있습니다."
-            ListboxProps={{ sx: { maxHeight: 220, overflowY: "auto" } }}
             disabled={isDisabled}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                label="카테고리"
-                placeholder="선택 또는 새 이름 입력"
-                fullWidth
-                error={Boolean(categoryError)}
-                helperText={categoryError ?? ((categoryValue ?? "").length > 0 ? `${(categoryValue ?? "").trim().length}/${CATEGORY_MAX_LENGTH}자` : "한글, 영어, 숫자, 띄어쓰기만 허용")}
-                slotProps={{ htmlInput: { ...params.inputProps, maxLength: CATEGORY_MAX_LENGTH } }}
-                sx={{ mt: 1 }}
-              />
-            )}
+            error={categoryError}
+            label="카테고리"
+            sx={{ mt: 1 }}
           />
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>

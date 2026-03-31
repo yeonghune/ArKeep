@@ -86,11 +86,13 @@ class AuthService:
         )
         user = result.scalar_one_or_none()
 
+        email = payload.get("email")
         now = datetime.datetime.now(datetime.timezone.utc)
         if user is None:
             user = User(
                 provider=PROVIDER,
                 provider_user_id=subject,
+                email=email,
                 display_name=name,
                 avatar_url=picture,
                 created_at=now,
@@ -98,6 +100,7 @@ class AuthService:
             self.db.add(user)
             await self.db.flush()
         else:
+            user.email = email
             user.display_name = name
             user.avatar_url = picture
 
@@ -172,7 +175,7 @@ class AuthService:
         self.db.add(new_rt)
         await self.db.commit()
 
-        return AuthResponse(token=access_token, email=user.provider_user_id), new_jti
+        return AuthResponse(token=access_token, email=user.email or user.provider_user_id), new_jti
 
     async def delete_account(self, user: User) -> None:
         """Delete user and all associated data (cascade handles articles/tokens)."""
