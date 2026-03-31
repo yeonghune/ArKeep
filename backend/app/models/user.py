@@ -20,6 +20,7 @@ class User(Base):
     )
     provider: Mapped[str] = mapped_column(String(20), nullable=False)
     provider_user_id: Mapped[str] = mapped_column(String(255), nullable=False)
+    email: Mapped[str | None] = mapped_column(String(255))
     display_name: Mapped[str | None] = mapped_column(String(255))
     avatar_url: Mapped[str | None] = mapped_column(String(2048))
     created_at: Mapped[datetime.datetime] = mapped_column(

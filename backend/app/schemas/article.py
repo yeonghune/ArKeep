@@ -1,8 +1,11 @@
 import datetime
+import re
 import uuid
 from typing import Optional
 
 from pydantic import BaseModel, field_validator, model_validator
+
+TAG_ALLOWED = re.compile(r"^[가-힣ㄱ-ㅎㅏ-ㅣa-zA-Z0-9]+$")
 
 
 class CreateArticleRequest(BaseModel):
@@ -13,9 +16,21 @@ class CreateArticleRequest(BaseModel):
 
     @field_validator("tags")
     @classmethod
-    def tags_max(cls, v: Optional[list[str]]) -> Optional[list[str]]:
-        if v is not None and len(v) > 5:
+    def validate_tags(cls, v: Optional[list[str]]) -> Optional[list[str]]:
+        if v is None:
+            return v
+        if len(v) > 5:
             raise ValueError("Tags must be at most 5")
+        seen: set[str] = set()
+        for tag in v:
+            stripped = tag.strip()
+            if len(stripped) > 20:
+                raise ValueError("Each tag must be at most 20 characters")
+            if not TAG_ALLOWED.match(stripped):
+                raise ValueError("Tags may only contain Korean, English letters, and numbers")
+            if stripped in seen:
+                raise ValueError(f"Duplicate tag: {stripped}")
+            seen.add(stripped)
         return v
 
     @field_validator("url")
@@ -121,9 +136,19 @@ class UpdateArticleTagsRequest(BaseModel):
 
     @field_validator("tags")
     @classmethod
-    def tags_max(cls, v: list[str]) -> list[str]:
+    def validate_tags(cls, v: list[str]) -> list[str]:
         if len(v) > 5:
             raise ValueError("Tags must be at most 5")
+        seen: set[str] = set()
+        for tag in v:
+            stripped = tag.strip()
+            if len(stripped) > 20:
+                raise ValueError("Each tag must be at most 20 characters")
+            if not TAG_ALLOWED.match(stripped):
+                raise ValueError("Tags may only contain Korean, English letters, and numbers")
+            if stripped in seen:
+                raise ValueError(f"Duplicate tag: {stripped}")
+            seen.add(stripped)
         return v
 
 

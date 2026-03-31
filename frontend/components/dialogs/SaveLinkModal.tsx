@@ -1,10 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import CloseIcon from "@mui/icons-material/Close";
 import LinkIcon from "@mui/icons-material/Link";
-import Autocomplete from "@mui/material/Autocomplete";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import Chip from "@mui/material/Chip";
 import Dialog from "@mui/material/Dialog";
 import IconButton from "@mui/material/IconButton";
 import InputAdornment from "@mui/material/InputAdornment";
@@ -13,6 +11,8 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 
 import type { Category } from "@/lib/categories";
+import { CategoryInputField } from "./CategoryInputField";
+import { TagInputField } from "./TagInputField";
 
 type Props = {
   open: boolean;
@@ -29,14 +29,16 @@ const CATEGORY_ALLOWED = /^[가-힣ㄱ-ㅎㅏ-ㅣa-zA-Z0-9 ]+$/;
 const CATEGORY_RESERVED = new Set(["모든 카테고리"]);
 const MAX_TAGS = 5;
 const MAX_TAG_LEN = 20;
+const TAG_ALLOWED = /^[가-힣ㄱ-ㅎㅏ-ㅣa-zA-Z0-9]+$/;
 
 function normalizeTags(raw: string[]): string[] {
   const out: string[] = [];
   const seen = new Set<string>();
   for (const t of raw) {
-    const v = String(t ?? "").trim().replace(/\s+/g, " ").replace(/^#+/, "");
+    const v = String(t ?? "").trim().replace(/^#+/, "");
     if (!v) continue;
     if (v.length > MAX_TAG_LEN) continue;
+    if (!TAG_ALLOWED.test(v)) continue;
     if (seen.has(v)) continue;
     seen.add(v);
     out.push(v);
@@ -47,7 +49,7 @@ function normalizeTags(raw: string[]): string[] {
 
 function validateCategory(name: string): string | null {
   const trimmed = name.replace(/ {2,}/g, " ").trim();
-  if (!trimmed) return null; // 빈 값은 선택 안 한 것
+  if (!trimmed) return null;
   if (CATEGORY_RESERVED.has(trimmed)) return `"${trimmed}"는 사용할 수 없습니다.`;
   if (trimmed.length > CATEGORY_MAX_LENGTH) return `카테고리 이름은 ${CATEGORY_MAX_LENGTH}자를 초과할 수 없습니다.`;
   if (!CATEGORY_ALLOWED.test(trimmed)) return "카테고리 이름은 한글, 영어, 숫자, 띄어쓰기만 사용할 수 있습니다.";
@@ -105,11 +107,26 @@ export function SaveLinkModal({ open, onClose, categories, isLoggedIn, onSave, o
     const normalizedCategory = rawCategory.length > 0 ? rawCategory : null;
     const normalizedMemo = memo.trim().length > 0 ? memo.trim() : null;
 
-    // 카테고리 검증
     const catValidationError = normalizedCategory ? validateCategory(normalizedCategory) : null;
     if (catValidationError) {
       setCategoryError(catValidationError);
       return;
+    }
+
+    if (tagInput.trim()) {
+      const v = tagInput.trim().replace(/^#+/, "");
+      if (!TAG_ALLOWED.test(v)) {
+        setTagError("태그는 한글, 영어, 숫자만 입력할 수 있습니다.");
+        return;
+      }
+      if (v.length > MAX_TAG_LEN) {
+        setTagError(`태그는 ${MAX_TAG_LEN}자를 초과할 수 없습니다.`);
+        return;
+      }
+      if (tags.includes(v)) {
+        setTagError("이미 추가된 태그입니다.");
+        return;
+      }
     }
 
     setError(null);
@@ -117,11 +134,13 @@ export function SaveLinkModal({ open, onClose, categories, isLoggedIn, onSave, o
     setTagError(null);
     setIsSubmitting(true);
     try {
-      // 새 카테고리면 먼저 생성
       if (normalizedCategory && !categories.some((c) => c.name === normalizedCategory)) {
         await onAddCategory(normalizedCategory);
       }
-      await onSave(normalizedUrl, normalizedCategory, normalizedMemo, normalizeTags(tags));
+      const finalTags = tagInput.trim()
+        ? normalizeTags([...tags, tagInput])
+        : normalizeTags(tags);
+      await onSave(normalizedUrl, normalizedCategory, normalizedMemo, finalTags);
       onClose();
     } catch (saveError) {
       const message = saveError instanceof Error ? saveError.message : "아티클 저장에 실패했습니다.";
@@ -137,13 +156,15 @@ export function SaveLinkModal({ open, onClose, categories, isLoggedIn, onSave, o
       onClose={onClose}
       maxWidth="md"
       fullWidth
-      TransitionProps={{ onEntered: () => urlInputRef.current?.focus() }}
-      PaperProps={{
-        sx: {
-          borderRadius: 3,
-          overflow: "hidden"
+      TransitionProps={{
+        onEntered: () => {
+          const isMobile = window.matchMedia("(hover: none) and (pointer: coarse)").matches;
+          if (!isMobile) {
+            urlInputRef.current?.focus();
+          }
         }
       }}
+      PaperProps={{ sx: { borderRadius: 3, overflow: "hidden" } }}
     >
       <Box
         component="form"
@@ -165,7 +186,7 @@ export function SaveLinkModal({ open, onClose, categories, isLoggedIn, onSave, o
           fullWidth
           inputRef={urlInputRef}
           value={url}
-          onChange={(event) => { setUrl(event.target.value); if (error) setError(null); }}
+          onChange={(e) => { setUrl(e.target.value); if (error) setError(null); }}
           placeholder="https://example.com/article"
           error={Boolean(error)}
           helperText={error ?? (isSubmitting ? "URL 정보를 가져오는 중..." : " ")}
@@ -187,79 +208,25 @@ export function SaveLinkModal({ open, onClose, categories, isLoggedIn, onSave, o
         />
 
         <Typography sx={{ fontSize: 13, color: "#64748b", mb: 0.75 }}>태그 (선택)</Typography>
-        <Autocomplete
-          multiple
-          freeSolo
-          options={[]}
-          value={tags}
-          inputValue={tagInput}
-          onInputChange={(_, v) => setTagInput(v)}
-          onChange={(_, nextValue) => {
-            const raw = nextValue as string[];
-            if (raw.length > MAX_TAGS) setTagError(`태그는 최대 ${MAX_TAGS}개까지 가능합니다.`);
-            else setTagError(null);
-            setTags(normalizeTags(raw));
-          }}
-          renderTags={(value, getTagProps) =>
-            value.map((option: string, index: number) => (
-              <Chip
-                variant="outlined"
-                size="small"
-                label={`#${option}`}
-                {...getTagProps({ index })}
-                key={`${option}-${index}`}
-              />
-            ))
-          }
-          renderInput={(params) => (
-            <TextField
-              {...params}
-              placeholder={tags.length >= MAX_TAGS ? `최대 ${MAX_TAGS}개까지` : "예) Next.js, Docker"}
-              error={Boolean(tagError)}
-              helperText={tagError ?? `최대 ${MAX_TAGS}개 · 태그당 ${MAX_TAG_LEN}자`}
-              onKeyDown={(e) => {
-                if (e.key === "," && tagInput.trim().length > 0) {
-                  e.preventDefault();
-                  const merged = normalizeTags([...tags, tagInput]);
-                  if (merged.length > MAX_TAGS) {
-                    setTagError(`태그는 최대 ${MAX_TAGS}개까지 가능합니다.`);
-                    return;
-                  }
-                  setTags(merged);
-                  setTagInput("");
-                }
-              }}
-            />
-          )}
-          sx={{ mb: 2 }}
-        />
+        <Box sx={{ mb: 2 }}>
+          <TagInputField
+            tags={tags}
+            inputValue={tagInput}
+            error={tagError}
+            onTagsChange={setTags}
+            onInputChange={setTagInput}
+            onError={setTagError}
+          />
+        </Box>
 
         <Typography sx={{ fontSize: 13, color: "#64748b", mb: 0.75 }}>카테고리 (선택)</Typography>
-        <Autocomplete
-          freeSolo
-          disabled={!isLoggedIn}
+        <CategoryInputField
+          value={categoryValue}
+          onChange={(v) => { setCategoryValue(v); setCategoryError(null); }}
           options={categories.map((c) => c.name)}
-          value={categoryValue ?? ""}
-          onChange={(_, nextValue) => {
-            setCategoryValue(nextValue || null);
-            setCategoryError(null);
-          }}
-          onInputChange={(_, newInputValue, reason) => {
-            if (reason === "input") {
-              setCategoryValue(newInputValue || null);
-              setCategoryError(null);
-            }
-          }}
-          noOptionsText="직접 입력하여 새 카테고리를 만들 수 있습니다."
-          renderInput={(params) => (
-            <TextField
-              {...params}
-              placeholder={isLoggedIn ? "선택 또는 새 카테고리 입력" : "게스트 모드는 카테고리를 설정할 수 없습니다."}
-              error={Boolean(categoryError)}
-              helperText={categoryError ?? ((categoryValue ?? "").length > 0 ? `${(categoryValue ?? "").trim().length}/${CATEGORY_MAX_LENGTH}자` : "한글, 영어, 숫자, 띄어쓰기만 허용")}
-              slotProps={{ htmlInput: { ...params.inputProps, maxLength: CATEGORY_MAX_LENGTH } }}
-            />
-          )}
+          disabled={!isLoggedIn}
+          error={categoryError}
+          placeholder={isLoggedIn ? "선택 또는 새 카테고리 입력" : "게스트 모드는 카테고리를 설정할 수 없습니다."}
           sx={{ mb: 2 }}
         />
 
@@ -269,7 +236,7 @@ export function SaveLinkModal({ open, onClose, categories, isLoggedIn, onSave, o
           multiline
           minRows={2}
           value={memo}
-          onChange={(event) => setMemo(event.target.value)}
+          onChange={(e) => setMemo(e.target.value)}
           placeholder="이 링크에 대한 메모를 남겨보세요."
           sx={{ mb: 2 }}
         />
