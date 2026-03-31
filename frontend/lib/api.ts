@@ -1,4 +1,4 @@
-﻿import { clearSession, getStoredSession, saveSession } from "./session";
+import { clearSession, getStoredSession, saveSession } from "./session";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "/backend";
 
@@ -27,6 +27,7 @@ type AuthRefreshResponse = {
 type ApiErrorPayload = {
   code?: string;
   message?: string;
+  error?: string;
 };
 
 export class ApiRequestError extends Error {
@@ -150,15 +151,19 @@ async function requestApi<T>(path: string, opts: RequestInit = {}, token?: strin
   }
 
   if (!response.ok) {
-    let message = `요청이 실패했습니다. (${response.status})`;
+    let message = `서버와의 문제가 발생했습니다.`;
     let code: string | undefined;
 
     try {
       const payload = (await response.json()) as ApiErrorPayload;
-      message = payload.message || message;
+      message = payload.message || payload.error || message;
       code = payload.code;
     } catch {
       // ignore json parsing errors
+    }
+
+    if (response.status === 429) {
+      message = "너무 잦은 요청을 보냈습니다. 잠시 후 다시 시도해 주세요.";
     }
 
     throw new ApiRequestError(localizeApiMessage(message), response.status, code);
