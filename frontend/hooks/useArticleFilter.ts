@@ -44,7 +44,18 @@ export function useArticleFilter(): ArticleFilterState & ArticleFilterActions {
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
-      setSearchQuery(searchInput.trim());
+      const trimmed = searchInput.trim();
+      if (trimmed.startsWith("#") && trimmed.length > 1) {
+        setSearchFieldRaw("tag");
+        setSearchQuery(trimmed.slice(1).trim());
+        return;
+      }
+      if (/^tag:\s*/i.test(trimmed)) {
+        setSearchFieldRaw("tag");
+        setSearchQuery(trimmed.replace(/^tag:\s*/i, "").trim());
+        return;
+      }
+      setSearchQuery(trimmed);
     }, SEARCH_DEBOUNCE_MS);
     return () => window.clearTimeout(timer);
   }, [searchInput]);

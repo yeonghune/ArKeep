@@ -1,6 +1,6 @@
 export type ArticleSort = "latest" | "oldest";
 export type ArticleFilter = "all" | "read" | "unread";
-export type ArticleSearchField = "title" | "url";
+export type ArticleSearchField = "title" | "url" | "tag";
 
 export type ArticleCard = {
   id: number;
@@ -12,6 +12,7 @@ export type ArticleCard = {
   domain: string;
   category: string | null;
   isRead: boolean;
+  tags: string[];
   createdAt: string;
 };
 

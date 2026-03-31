@@ -32,6 +32,31 @@ from app.services.og_extractor import extract_og_metadata
 
 DEFAULT_DESCRIPTION = ""
 MAX_PAGE_SIZE = 8
+MAX_TAGS = 5
+MAX_TAG_LEN = 20
+
+
+def _normalize_tags(raw: list[str] | None) -> list[str]:
+    if not raw:
+        return []
+    out: list[str] = []
+    seen: set[str] = set()
+    for t in raw:
+        if t is None:
+            continue
+        v = " ".join(str(t).strip().split()).lstrip("#")
+        if not v:
+            continue
+        if len(v) > MAX_TAG_LEN:
+            raise AppException(400, "BAD_REQUEST", f"Tag must be at most {MAX_TAG_LEN} characters")
+        key = v
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(v)
+        if len(out) > MAX_TAGS:
+            raise AppException(400, "BAD_REQUEST", f"Tags must be at most {MAX_TAGS}")
+    return out
 
 
 def _extract_domain(url: str) -> str:
@@ -53,6 +78,7 @@ def _to_response(article: Article) -> ArticleResponse:
         domain=article.domain,
         category=article.category.name if article.category else None,
         isRead=article.is_read,
+        tags=list(article.tags or []),
         createdAt=article.created_at,
     )
 
@@ -111,6 +137,7 @@ class ArticleService:
         domain = _extract_domain(body.url)
         now = datetime.datetime.now(datetime.timezone.utc)
         category_id = await _resolve_category_id(self.db, user.id, body.category)
+        tags = _normalize_tags(body.tags)
 
         article = Article(
             public_id=uuid.uuid4(),
@@ -120,6 +147,7 @@ class ArticleService:
             description=description,
             thumbnail_url=thumbnail_url,
             domain=domain,
+            tags=tags,
             category_id=category_id,
             is_read=False,
             created_at=now,
@@ -154,6 +182,12 @@ class ArticleService:
         if query:
             if search_field == "url":
                 stmt = stmt.where(func.lower(Article.url).contains(query.lower()))
+            elif search_field == "tag":
+                tag = query.strip().lstrip("#").lower()
+                if tag:
+                    # NOTE: Avoid `unnest()` column naming pitfalls across SQLAlchemy/asyncpg.
+                    # For v1 search, treat tags as a concatenated string and run case-insensitive substring match.
+                    stmt = stmt.where(func.lower(func.array_to_string(Article.tags, " ")).contains(tag))
             else:
                 stmt = stmt.where(func.lower(Article.title).contains(query.lower()))
         if category:
@@ -202,6 +236,19 @@ class ArticleService:
         if body.description is not None:
             article.description = body.description[:1000]
 
+        await self.db.commit()
+        await self.db.refresh(article)
+        return _to_response(article)
+
+    async def update_tags(self, user: User, article_id: int, tags: list[str]) -> ArticleResponse:
+        result = await self.db.execute(
+            select(Article).where(Article.id == article_id, Article.user_id == user.id)
+        )
+        article = result.scalar_one_or_none()
+        if article is None:
+            raise AppException(404, "NOT_FOUND", "Article not found")
+
+        article.tags = _normalize_tags(tags)
         await self.db.commit()
         await self.db.refresh(article)
         return _to_response(article)

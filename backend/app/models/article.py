@@ -3,6 +3,7 @@ import uuid
 from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, Index, String, UniqueConstraint
+from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -33,6 +34,7 @@ class Article(Base):
     description: Mapped[str | None] = mapped_column(String(1000))
     thumbnail_url: Mapped[str | None] = mapped_column(String(2048))
     domain: Mapped[str] = mapped_column(String(255), nullable=False)
+    tags: Mapped[list[str]] = mapped_column(ARRAY(String(50)), nullable=False, default=list)
     category_id: Mapped[int | None] = mapped_column(
         ForeignKey("categories.id", ondelete="SET NULL"), nullable=True
     )

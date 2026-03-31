@@ -4,6 +4,7 @@ import CloseIcon from "@mui/icons-material/Close";
 import LaunchIcon from "@mui/icons-material/Launch";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
 import Divider from "@mui/material/Divider";
 import IconButton from "@mui/material/IconButton";
 import Stack from "@mui/material/Stack";
@@ -36,6 +37,7 @@ export function ArticleDetailContent({ card, isMobile, onClose, onToggleRead, on
 
   const statusLabel = card.isRead ? "열람" : "미열람";
   const categoryLabel = getCategoryLabel(card.category);
+  const tags = card.tags ?? [];
 
   const thumbnail = card.thumbnailUrl ? (
     <Box
@@ -130,6 +132,28 @@ export function ArticleDetailContent({ card, isMobile, onClose, onToggleRead, on
     </Stack>
   );
 
+  const tagChips = tags.length > 0 ? (
+    <Stack direction="row" spacing={0.75} sx={{ mt: 0.75, mb: 1.25, flexWrap: "wrap", rowGap: 0.75 }}>
+      {tags.slice(0, 5).map((t) => (
+        <Chip
+          key={t}
+          size="small"
+          variant="outlined"
+          label={`#${t}`}
+          sx={{
+            height: 22,
+            fontSize: 12,
+            borderRadius: 999,
+            bgcolor: "rgba(37,99,235,0.04)",
+            borderColor: "rgba(37,99,235,0.18)",
+            color: "#1e293b",
+            "& .MuiChip-label": { px: 0.9 },
+          }}
+        />
+      ))}
+    </Stack>
+  ) : null;
+
   if (isMobile) {
     return (
       <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
@@ -158,6 +182,7 @@ export function ArticleDetailContent({ card, isMobile, onClose, onToggleRead, on
           <Typography sx={{ fontWeight: 800, fontSize: 20, lineHeight: 1.35, mb: 0.75, wordBreak: "break-word" }}>
             {card.title}
           </Typography>
+          {tagChips}
           <Stack direction="row" spacing={0.75} alignItems="center" sx={{ mb: 2.5 }}>
             <CardSource card={card} />
             <Typography sx={{ fontSize: 12, color: "#64748b" }}>{card.domain}</Typography>
@@ -213,6 +238,7 @@ export function ArticleDetailContent({ card, isMobile, onClose, onToggleRead, on
           >
             {card.title}
           </Typography>
+          {tagChips}
           <Stack direction="row" spacing={0.75} alignItems="center" sx={{ mb: 2.5 }}>
             <CardSource card={card} />
             <Typography sx={{ fontSize: 12, color: "#64748b" }}>{card.domain}</Typography>

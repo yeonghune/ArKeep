@@ -7,7 +7,7 @@ from sqlalchemy.engine import URL as SA_URL
 
 # Import all models so Alembic can detect them
 from app.database import Base
-from app.models import article, refresh_token, user  # noqa: F401
+from app.models import article, category, refresh_token, user  # noqa: F401
 
 config = context.config
 if config.config_file_name is not None:

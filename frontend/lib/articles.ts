@@ -5,6 +5,25 @@ import type { ArticleCard, ArticleCursorPage, ArticleSearchField, ArticleSort } 
 const LOCAL_ARTICLES_KEY = "arkeep_guest_articles_v1";
 const DEFAULT_PAGE_SIZE = 8;
 
+const MAX_TAGS = 5;
+const MAX_TAG_LEN = 20;
+
+function normalize_tags(raw?: string[] | null): string[] {
+  if (!raw) return [];
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const t of raw) {
+    const v = String(t ?? "").trim().replace(/\s+/g, " ").replace(/^#+/, "");
+    if (!v) continue;
+    if (v.length > MAX_TAG_LEN) throw new Error(`Tag must be at most ${MAX_TAG_LEN} characters`);
+    if (seen.has(v)) continue;
+    seen.add(v);
+    out.push(v);
+    if (out.length > MAX_TAGS) throw new Error(`Tags must be at most ${MAX_TAGS}`);
+  }
+  return out;
+}
+
 export type ListArticlesParams = {
   isRead?: boolean;
   sort?: ArticleSort;
@@ -20,12 +39,17 @@ export type CreateArticleInput = {
   url: string;
   category?: string | null;
   description?: string | null;
+  tags?: string[];
 };
 
 export type UpdateArticleInput = {
   isRead?: boolean;
   category?: string | null;
   description?: string | null;
+};
+
+export type UpdateArticleTagsInput = {
+  tags: string[];
 };
 
 export type BulkFilter = {
@@ -195,6 +219,7 @@ async function createLocalArticle(input: CreateArticleInput): Promise<ArticleCar
     domain,
     category: normalizeCategory(input.category),
     isRead: false,
+    tags: normalize_tags(input.tags),
     createdAt: now.toISOString()
   };
 }
@@ -271,7 +296,7 @@ export async function createArticle(input: CreateArticleInput): Promise<ArticleC
     () =>
       api<ArticleCard>("/articles", {
         method: "POST",
-        body: JSON.stringify(input)
+        body: JSON.stringify({ ...input, tags: normalize_tags(input.tags) })
       }),
     async () => {
       const local = readLocalArticles();
@@ -307,9 +332,35 @@ export async function patchArticle(id: number, input: UpdateArticleInput): Promi
         ...current,
         isRead: typeof input.isRead === "boolean" ? input.isRead : current.isRead,
         category: input.category === undefined ? current.category : normalizeCategory(input.category),
-        description: input.description === undefined ? current.description : (input.description?.trim() ?? "")
+        description: input.description === undefined ? current.description : (input.description?.trim() ?? ""),
+        tags: current.tags ?? [],
       };
 
+      const updated = [...local];
+      updated[index] = next;
+      writeLocalArticles(updated);
+      return next;
+    }
+  );
+}
+
+export async function patchArticleTags(id: number, input: UpdateArticleTagsInput): Promise<ArticleCard> {
+  const normalized = { tags: normalize_tags(input.tags) };
+  return withServerFallback(
+    () =>
+      api<ArticleCard>(`/articles/${id}/tags`, {
+        method: "PATCH",
+        body: JSON.stringify(normalized),
+      }),
+    () => {
+      const local = readLocalArticles();
+      const index = local.findIndex((item) => item.id === id);
+      if (index < 0) {
+        throw new Error("Article not found");
+      }
+
+      const current = local[index];
+      const next: ArticleCard = { ...current, tags: normalized.tags };
       const updated = [...local];
       updated[index] = next;
       writeLocalArticles(updated);

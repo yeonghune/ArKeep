@@ -161,15 +161,17 @@ export default function HomePage() {
   }, []);
 
   const sentinelRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const loadMoreRef = useRef(articleState.loadMore);
   loadMoreRef.current = articleState.loadMore;
 
   useEffect(() => {
     const sentinel = sentinelRef.current;
     if (!sentinel) return;
+    const root = scrollContainerRef.current ?? undefined;
     const observer = new IntersectionObserver(
       (entries) => { if (entries[0].isIntersecting) loadMoreRef.current(); },
-      { rootMargin: "300px", threshold: 0 }
+      { root, rootMargin: "300px", threshold: 0 }
     );
     observer.observe(sentinel);
     return () => observer.disconnect();
@@ -365,8 +367,8 @@ export default function HomePage() {
                             onClick={(e) => setSearchFieldMenuAnchor(e.currentTarget)}
                             sx={{
                               p: "2px",
-                              color: filterState.searchField === "url" ? "primary.main" : "#94a3b8",
-                              "&:hover": { color: filterState.searchField === "url" ? "primary.dark" : "#475569" },
+                              color: filterState.searchField !== "title" ? "primary.main" : "#94a3b8",
+                              "&:hover": { color: filterState.searchField !== "title" ? "primary.dark" : "#475569" },
                             }}
                           >
                             <TuneIcon sx={{ fontSize: 14 }} />
@@ -400,6 +402,13 @@ export default function HomePage() {
                     sx={{ fontSize: "0.85rem", gap: 1 }}
                   >
                     URL
+                  </MenuItem>
+                  <MenuItem
+                    selected={filterState.searchField === "tag"}
+                    onClick={() => { filterState.setSearchField("tag"); setSearchFieldMenuAnchor(null); }}
+                    sx={{ fontSize: "0.85rem", gap: 1 }}
+                  >
+                    태그
                   </MenuItem>
                 </Menu>
 
@@ -617,7 +626,7 @@ export default function HomePage() {
               <Divider />
             </Box>
 
-            <Box sx={{ flex: 1, overflowY: "auto" }}>
+            <Box ref={scrollContainerRef} sx={{ flex: 1, overflowY: "auto" }}>
               {combinedError ? (
                 <Alert severity="error" sx={{ mb: 2, mx: { xs: 1.5, sm: 3, lg: 4 } }}>
                   {combinedError}
@@ -667,6 +676,7 @@ export default function HomePage() {
                           onDelete={(card) => { setPendingDeleteCard(card); return Promise.resolve(); }}
                           onToggleRead={articleState.handleToggleRead}
                           onUpdateCategory={articleState.handleUpdateCategory}
+                          onUpdateTags={articleState.handleUpdateTags}
                           onAddCategory={categoryState.addCategory}
                           onClick={() => articleState.setSelectedCard(card)}
                         />
@@ -687,6 +697,7 @@ export default function HomePage() {
                           onDelete={(card) => { setPendingDeleteCard(card); return Promise.resolve(); }}
                           onToggleRead={articleState.handleToggleRead}
                           onUpdateCategory={articleState.handleUpdateCategory}
+                          onUpdateTags={articleState.handleUpdateTags}
                           onAddCategory={categoryState.addCategory}
                           onClick={() => articleState.setSelectedCard(card)}
                         />

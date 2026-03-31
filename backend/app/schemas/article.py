@@ -9,6 +9,14 @@ class CreateArticleRequest(BaseModel):
     url: str
     category: Optional[str] = None
     description: Optional[str] = None
+    tags: Optional[list[str]] = None
+
+    @field_validator("tags")
+    @classmethod
+    def tags_max(cls, v: Optional[list[str]]) -> Optional[list[str]]:
+        if v is not None and len(v) > 5:
+            raise ValueError("Tags must be at most 5")
+        return v
 
     @field_validator("url")
     @classmethod
@@ -69,6 +77,7 @@ class ArticleResponse(BaseModel):
     domain: str
     category: Optional[str]
     isRead: bool
+    tags: list[str] = []
     createdAt: datetime.datetime
 
     model_config = {"from_attributes": True}
@@ -105,6 +114,18 @@ class BulkDeleteRequest(BaseModel):
 
 class BulkActionResponse(BaseModel):
     affected: int
+
+
+class UpdateArticleTagsRequest(BaseModel):
+    tags: list[str]
+
+    @field_validator("tags")
+    @classmethod
+    def tags_max(cls, v: list[str]) -> list[str]:
+        if len(v) > 5:
+            raise ValueError("Tags must be at most 5")
+        return v
+
 
 
 class MigrationItem(BaseModel):
