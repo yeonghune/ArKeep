@@ -6,6 +6,7 @@ import {
   deleteArticle,
   listArticles,
   patchArticle,
+  patchArticleTags,
 } from "@/lib/articles";
 import type { BulkFilter } from "@/lib/articles";
 import type { ArticleCard, ArticleSearchField, ArticleSort } from "@/types";
@@ -38,9 +39,10 @@ export type UseArticlesReturn = {
   selectedCard: ArticleCard | null;
   setSelectedCard: (card: ArticleCard | null) => void;
   loadMore: () => void;
-  handleCreate: (url: string, category?: string | null, description?: string | null) => Promise<void>;
+  handleCreate: (url: string, category?: string | null, description?: string | null, tags?: string[]) => Promise<void>;
   handleToggleRead: (card: ArticleCard) => Promise<void>;
   handleUpdateCategory: (card: ArticleCard, category: string | null) => Promise<void>;
+  handleUpdateTags: (card: ArticleCard, tags: string[]) => Promise<void>;
   handleSaveMemo: (card: ArticleCard, memo: string) => Promise<void>;
   handleDelete: (card: ArticleCard) => Promise<void>;
   handleBulkToggleRead: (ids: number[], markAsRead: boolean, selectAll?: boolean) => Promise<void>;
@@ -142,9 +144,9 @@ export function useArticles({
     await fetchInitial();
   }, [fetchInitial]);
 
-  async function handleCreate(url: string, category?: string | null, description?: string | null) {
+  async function handleCreate(url: string, category?: string | null, description?: string | null, tags?: string[]) {
     setListError(null);
-    const created = await createArticle({ url, category, description });
+    const created = await createArticle({ url, category, description, tags });
     setAllArticleCount((prev) => prev + 1);
     setUnreadArticleCount((prev) => prev + 1);
     setTotalItems((prev) => prev + 1);
@@ -194,6 +196,20 @@ export function useArticles({
       } else {
         setArticles((prev) => prev.map((a) => a.id === card.id ? updated : a));
       }
+      setSelectedCard((cur) => cur?.id === card.id ? updated : cur);
+    } catch (error) {
+      setListError(parseErrorMessage(error));
+    } finally {
+      setMutatingArticleId(null);
+    }
+  }
+
+  async function handleUpdateTags(card: ArticleCard, tags: string[]) {
+    setMutatingArticleId(card.id);
+    setListError(null);
+    try {
+      const updated = await patchArticleTags(card.id, { tags });
+      setArticles((prev) => prev.map((a) => a.id === card.id ? updated : a));
       setSelectedCard((cur) => cur?.id === card.id ? updated : cur);
     } catch (error) {
       setListError(parseErrorMessage(error));
@@ -332,6 +348,7 @@ export function useArticles({
     handleCreate,
     handleToggleRead,
     handleUpdateCategory,
+    handleUpdateTags,
     handleSaveMemo,
     handleDelete,
     handleBulkToggleRead,

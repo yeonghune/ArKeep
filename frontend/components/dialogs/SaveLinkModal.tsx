@@ -4,6 +4,7 @@ import LinkIcon from "@mui/icons-material/Link";
 import Autocomplete from "@mui/material/Autocomplete";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
 import Dialog from "@mui/material/Dialog";
 import IconButton from "@mui/material/IconButton";
 import InputAdornment from "@mui/material/InputAdornment";
@@ -18,7 +19,7 @@ type Props = {
   onClose: () => void;
   categories: Category[];
   isLoggedIn: boolean;
-  onSave: (url: string, category?: string | null, description?: string | null) => Promise<void>;
+  onSave: (url: string, category?: string | null, description?: string | null, tags?: string[]) => Promise<void>;
   onAddCategory: (name: string) => Promise<Category>;
 };
 
@@ -26,6 +27,23 @@ const URL_PATTERN = /^https?:\/\/.+/i;
 const CATEGORY_MAX_LENGTH = 10;
 const CATEGORY_ALLOWED = /^[가-힣ㄱ-ㅎㅏ-ㅣa-zA-Z0-9 ]+$/;
 const CATEGORY_RESERVED = new Set(["모든 카테고리"]);
+const MAX_TAGS = 5;
+const MAX_TAG_LEN = 20;
+
+function normalizeTags(raw: string[]): string[] {
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const t of raw) {
+    const v = String(t ?? "").trim().replace(/\s+/g, " ").replace(/^#+/, "");
+    if (!v) continue;
+    if (v.length > MAX_TAG_LEN) continue;
+    if (seen.has(v)) continue;
+    seen.add(v);
+    out.push(v);
+    if (out.length >= MAX_TAGS) break;
+  }
+  return out;
+}
 
 function validateCategory(name: string): string | null {
   const trimmed = name.replace(/ {2,}/g, " ").trim();
@@ -41,8 +59,11 @@ export function SaveLinkModal({ open, onClose, categories, isLoggedIn, onSave, o
   const [url, setUrl] = useState("");
   const [categoryValue, setCategoryValue] = useState<string | null>(null);
   const [memo, setMemo] = useState("");
+  const [tags, setTags] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [categoryError, setCategoryError] = useState<string | null>(null);
+  const [tagError, setTagError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -50,8 +71,11 @@ export function SaveLinkModal({ open, onClose, categories, isLoggedIn, onSave, o
       setUrl("");
       setCategoryValue(null);
       setMemo("");
+      setTags([]);
+      setTagInput("");
       setError(null);
       setCategoryError(null);
+      setTagError(null);
       setIsSubmitting(false);
       return;
     }
@@ -90,13 +114,14 @@ export function SaveLinkModal({ open, onClose, categories, isLoggedIn, onSave, o
 
     setError(null);
     setCategoryError(null);
+    setTagError(null);
     setIsSubmitting(true);
     try {
       // 새 카테고리면 먼저 생성
       if (normalizedCategory && !categories.some((c) => c.name === normalizedCategory)) {
         await onAddCategory(normalizedCategory);
       }
-      await onSave(normalizedUrl, normalizedCategory, normalizedMemo);
+      await onSave(normalizedUrl, normalizedCategory, normalizedMemo, normalizeTags(tags));
       onClose();
     } catch (saveError) {
       const message = saveError instanceof Error ? saveError.message : "아티클 저장에 실패했습니다.";
@@ -158,6 +183,54 @@ export function SaveLinkModal({ open, onClose, categories, isLoggedIn, onSave, o
               </InputAdornment>
             ) : null,
           }}
+          sx={{ mb: 2 }}
+        />
+
+        <Typography sx={{ fontSize: 13, color: "#64748b", mb: 0.75 }}>태그 (선택)</Typography>
+        <Autocomplete
+          multiple
+          freeSolo
+          options={[]}
+          value={tags}
+          inputValue={tagInput}
+          onInputChange={(_, v) => setTagInput(v)}
+          onChange={(_, nextValue) => {
+            const raw = nextValue as string[];
+            if (raw.length > MAX_TAGS) setTagError(`태그는 최대 ${MAX_TAGS}개까지 가능합니다.`);
+            else setTagError(null);
+            setTags(normalizeTags(raw));
+          }}
+          renderTags={(value, getTagProps) =>
+            value.map((option: string, index: number) => (
+              <Chip
+                variant="outlined"
+                size="small"
+                label={`#${option}`}
+                {...getTagProps({ index })}
+                key={`${option}-${index}`}
+              />
+            ))
+          }
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              placeholder={tags.length >= MAX_TAGS ? `최대 ${MAX_TAGS}개까지` : "예) Next.js, Docker"}
+              error={Boolean(tagError)}
+              helperText={tagError ?? `최대 ${MAX_TAGS}개 · 태그당 ${MAX_TAG_LEN}자`}
+              onKeyDown={(e) => {
+                if (e.key === "," && tagInput.trim().length > 0) {
+                  e.preventDefault();
+                  const merged = normalizeTags([...tags, tagInput]);
+                  if (merged.length > MAX_TAGS) {
+                    setTagError(`태그는 최대 ${MAX_TAGS}개까지 가능합니다.`);
+                    return;
+                  }
+                  setTags(merged);
+                  setTagInput("");
+                }
+              }}
+            />
+          )}
           sx={{ mb: 2 }}
         />
 

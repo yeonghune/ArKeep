@@ -16,6 +16,7 @@ from app.schemas.article import (
     BulkUpdateRequest,
     CreateArticleRequest,
     UpdateArticleRequest,
+    UpdateArticleTagsRequest,
 )
 from app.services.article_service import ArticleService
 
@@ -85,6 +86,16 @@ async def update_article(
     current_user: User = Depends(get_current_user),
 ) -> ArticleResponse:
     return await ArticleService(db).update(current_user, id, body)
+
+
+@router.patch("/{id}/tags", response_model=ArticleResponse)
+async def update_article_tags(
+    body: UpdateArticleTagsRequest,
+    id: int = Path(...),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> ArticleResponse:
+    return await ArticleService(db).update_tags(current_user, id, body.tags)
 
 
 @router.delete("/{id}", status_code=204)

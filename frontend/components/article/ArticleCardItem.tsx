@@ -1,8 +1,9 @@
-import { memo, useMemo, useState } from "react";
+import { memo, useLayoutEffect, useMemo, useRef, useState } from "react";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import DriveFileRenameOutlineIcon from "@mui/icons-material/DriveFileRenameOutline";
+import SellOutlinedIcon from "@mui/icons-material/SellOutlined";
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import RadioButtonUncheckedIcon from "@mui/icons-material/RadioButtonUnchecked";
@@ -24,6 +25,7 @@ import type { ArticleCard } from "@/types";
 import { ArticleMedia } from "./ArticleMedia";
 import { CardSource } from "./CardSource";
 import { CategoryEditDialog } from "@/components/dialogs/CategoryEditDialog";
+import { EditTagsDialog } from "@/components/dialogs/EditTagsDialog";
 
 type Props = {
   card: ArticleCard;
@@ -36,14 +38,20 @@ type Props = {
   onDelete: (card: ArticleCard) => Promise<void>;
   onToggleRead: (card: ArticleCard) => Promise<void>;
   onUpdateCategory: (card: ArticleCard, category: string | null) => Promise<void>;
+  onUpdateTags: (card: ArticleCard, tags: string[]) => Promise<void>;
   onAddCategory: (name: string) => Promise<Category>;
   onClick: () => void;
 };
 
-export const ArticleCardItem = memo(function ArticleCardItem({ card, categories, isLoggedIn, isBusy = false, isBulkMode = false, isSelected = false, onSelect, onDelete, onToggleRead, onUpdateCategory, onAddCategory, onClick }: Props) {
+export const ArticleCardItem = memo(function ArticleCardItem({ card, categories, isLoggedIn, isBusy = false, isBulkMode = false, isSelected = false, onSelect, onDelete, onToggleRead, onUpdateCategory, onUpdateTags, onAddCategory, onClick }: Props) {
   const [menuAnchorEl, setMenuAnchorEl] = useState<HTMLElement | null>(null);
   const [isCategoryDialogOpen, setIsCategoryDialogOpen] = useState(false);
+  const [isTagsDialogOpen, setIsTagsDialogOpen] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  const [visibleTagCount, setVisibleTagCount] = useState(0);
+  const tagContainerRef = useRef<HTMLDivElement | null>(null);
+  const tagMeasureRefs = useRef<Record<number, HTMLDivElement | null>>({});
+  const moreMeasureRefs = useRef<Record<number, HTMLDivElement | null>>({});
   const isRead = card.isRead;
   const statusLabel = isRead ? "열람" : "미열람";
   const categoryLabel = getCategoryLabel(card.category);
@@ -53,6 +61,51 @@ export const ArticleCardItem = memo(function ArticleCardItem({ card, categories,
   const availableCategories = categories;
 
   const closeMenu = () => setMenuAnchorEl(null);
+  const tags = card.tags ?? [];
+  const hiddenTagCount = Math.max(0, tags.length - visibleTagCount);
+
+  useLayoutEffect(() => {
+    if (tags.length === 0) {
+      setVisibleTagCount(0);
+      return;
+    }
+
+    const gapPx = 6; // spacing={0.75}
+    const calculate = () => {
+      const containerWidth = tagContainerRef.current?.clientWidth ?? 0;
+      if (containerWidth <= 0) return;
+
+      const tagWidths = tags.map((_, index) => tagMeasureRefs.current[index]?.offsetWidth ?? 0);
+      if (tagWidths.some((w) => w <= 0)) return;
+
+      const prefixSums: number[] = [0];
+      for (let i = 0; i < tagWidths.length; i += 1) {
+        prefixSums[i + 1] = prefixSums[i] + tagWidths[i];
+      }
+
+      let best = 0;
+      for (let count = tags.length; count >= 0; count -= 1) {
+        const remaining = tags.length - count;
+        let used = prefixSums[count];
+        if (count > 0) used += gapPx * (count - 1);
+        if (remaining > 0) {
+          const moreWidth = moreMeasureRefs.current[remaining]?.offsetWidth ?? 0;
+          if (moreWidth <= 0) continue;
+          used += (count > 0 ? gapPx : 0) + moreWidth;
+        }
+        if (used <= containerWidth) {
+          best = count;
+          break;
+        }
+      }
+      setVisibleTagCount(best);
+    };
+
+    calculate();
+    const observer = new ResizeObserver(calculate);
+    if (tagContainerRef.current) observer.observe(tagContainerRef.current);
+    return () => observer.disconnect();
+  }, [tags]);
 
   function openCategoryDialog() {
     setIsCategoryDialogOpen(true);
@@ -148,7 +201,7 @@ export const ArticleCardItem = memo(function ArticleCardItem({ card, categories,
               fontSize: 16,
               fontWeight: 700,
               lineHeight: 1.35,
-              mb: 1.5,
+              mb: 1,
               display: "-webkit-box",
               WebkitLineClamp: 2,
               WebkitBoxOrient: "vertical",
@@ -160,14 +213,124 @@ export const ArticleCardItem = memo(function ArticleCardItem({ card, categories,
           >
             {card.title}
           </Typography>
+          {card.tags?.length > 0 && (
+            <Stack
+              ref={tagContainerRef}
+              direction="row"
+              spacing={0.75}
+              sx={{
+                flexWrap: "nowrap",
+                overflow: "hidden",
+                alignItems: "center",
+                minWidth: 0,
+                mb: 0.5,
+              }}
+            >
+              {tags.slice(0, visibleTagCount).map((t) => (
+                <Chip
+                  key={t}
+                  size="small"
+                  variant="outlined"
+                  label={`#${t}`}
+                  sx={{
+                    height: 20,
+                    fontSize: 11,
+                    borderRadius: 999,
+                    bgcolor: "rgba(37,99,235,0.04)",
+                    borderColor: "rgba(37,99,235,0.18)",
+                    color: "#1e293b",
+                    flexShrink: 0,
+                    "& .MuiChip-label": { px: 0.75 },
+                  }}
+                />
+              ))}
+              {hiddenTagCount > 0 && (
+                <Chip
+                  size="small"
+                  variant="outlined"
+                  label={`+${hiddenTagCount}개`}
+                  sx={{
+                    height: 20,
+                    fontSize: 11,
+                    borderRadius: 999,
+                    bgcolor: "rgba(148,163,184,0.10)",
+                    borderColor: "rgba(148,163,184,0.35)",
+                    color: "#475569",
+                    flexShrink: 0,
+                    "& .MuiChip-label": { px: 0.75 },
+                  }}
+                />
+              )}
+            </Stack>
+          )}
+          {tags.length > 0 && (
+            <Box
+              sx={{
+                position: "absolute",
+                visibility: "hidden",
+                pointerEvents: "none",
+                height: 0,
+                overflow: "hidden",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {tags.map((t, index) => (
+                <Box
+                  key={`measure-tag-${index}`}
+                  ref={(el: HTMLDivElement | null) => {
+                    tagMeasureRefs.current[index] = el;
+                  }}
+                  sx={{ display: "inline-block", mr: 0.75 }}
+                >
+                  <Chip
+                    size="small"
+                    variant="outlined"
+                    label={`#${t}`}
+                    sx={{
+                      height: 20,
+                      fontSize: 11,
+                      borderRadius: 999,
+                      bgcolor: "rgba(37,99,235,0.04)",
+                      borderColor: "rgba(37,99,235,0.18)",
+                      color: "#1e293b",
+                      "& .MuiChip-label": { px: 0.75 },
+                    }}
+                  />
+                </Box>
+              ))}
+              {Array.from({ length: tags.length }, (_, idx) => idx + 1).map((remaining) => (
+                <Box
+                  key={`measure-more-${remaining}`}
+                  ref={(el: HTMLDivElement | null) => {
+                    moreMeasureRefs.current[remaining] = el;
+                  }}
+                  sx={{ display: "inline-block", mr: 0.75 }}
+                >
+                  <Chip
+                    size="small"
+                    variant="outlined"
+                    label={`+${remaining}개`}
+                    sx={{
+                      height: 20,
+                      fontSize: 11,
+                      borderRadius: 999,
+                      bgcolor: "rgba(148,163,184,0.10)",
+                      borderColor: "rgba(148,163,184,0.35)",
+                      color: "#475569",
+                      "& .MuiChip-label": { px: 0.75 },
+                    }}
+                  />
+                </Box>
+              ))}
+            </Box>
+          )}
 
           <Stack
             direction="row"
             justifyContent="space-between"
             alignItems="center"
             sx={{
-              mt: "auto",
-              pt: 1.5,
+              pt: 1.25,
               borderTop: "none !important",
               boxShadow: "none !important",
               "&::before, &::after": {
@@ -241,6 +404,19 @@ export const ArticleCardItem = memo(function ArticleCardItem({ card, categories,
           </MenuItem>
         )}
         <MenuItem
+          disabled={isBusy}
+          onClick={() => {
+            setIsTagsDialogOpen(true);
+            closeMenu();
+          }}
+          sx={{ fontSize: 13 }}
+        >
+          <ListItemIcon>
+            <SellOutlinedIcon sx={{ fontSize: 16 }} />
+          </ListItemIcon>
+          태그 수정
+        </MenuItem>
+        <MenuItem
           sx={{ fontSize: 13 }}
           onClick={() => {
             void navigator.clipboard.writeText(card.url);
@@ -279,6 +455,21 @@ export const ArticleCardItem = memo(function ArticleCardItem({ card, categories,
           try {
             await onUpdateCategory(card, category);
             setIsCategoryDialogOpen(false);
+          } catch {
+            // Errors are surfaced by parent list error UI.
+          }
+        }}
+      />
+
+      <EditTagsDialog
+        open={isTagsDialogOpen}
+        title="태그 수정"
+        initialTags={card.tags ?? []}
+        onClose={() => setIsTagsDialogOpen(false)}
+        onSave={async (nextTags) => {
+          try {
+            await onUpdateTags(card, nextTags);
+            setIsTagsDialogOpen(false);
           } catch {
             // Errors are surfaced by parent list error UI.
           }
