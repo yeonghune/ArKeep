@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Cookie, Depends, Response
+from fastapi import APIRouter, Cookie, Depends, Request, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import get_settings
 from app.database import get_db
 from app.dependencies import get_current_user
 from app.models.user import User
+from app.rate_limiter import limiter
 from app.schemas.auth import AuthResponse, GoogleLoginRequest
 from app.services.auth_service import AuthService
 
@@ -40,7 +41,9 @@ def _clear_refresh_cookie(response: Response) -> None:
 
 
 @router.post("/google", response_model=AuthResponse)
+@limiter.limit("10/minute")
 async def google_login(
+    request: Request,
     body: GoogleLoginRequest,
     response: Response,
     db: AsyncSession = Depends(get_db),
@@ -52,7 +55,9 @@ async def google_login(
 
 
 @router.post("/refresh", response_model=AuthResponse)
+@limiter.limit("30/minute")
 async def refresh_token(
+    request: Request,
     response: Response,
     db: AsyncSession = Depends(get_db),
     arkeep_refresh_token: str | None = Cookie(default=None),
