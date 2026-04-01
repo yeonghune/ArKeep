@@ -50,6 +50,7 @@ import { useArticles } from "@/hooks/useArticles";
 import { useCategories } from "@/hooks/useCategories";
 import { useSession } from "@/hooks/useSession";
 import { useViewMode } from "@/hooks/useViewMode";
+import { listArticles } from "@/lib/articles";
 import type { ArticleCard } from "@/types";
 
 const ArticleDetailModal = dynamic(
@@ -83,7 +84,7 @@ export default function HomePage() {
   const [searchFieldMenuAnchor, setSearchFieldMenuAnchor] = useState<HTMLElement | null>(null);
   const [isBulkMode, setIsBulkMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
-  const [selectAllMode, setSelectAllMode] = useState(false);
+  const [isSelectingAll, setIsSelectingAll] = useState(false);
   const [isTitleIconHovered, setIsTitleIconHovered] = useState(false);
   const [isBulkCategoryOpen, setIsBulkCategoryOpen] = useState(false);
   const [bulkMenuAnchor, setBulkMenuAnchor] = useState<HTMLElement | null>(null);
@@ -102,12 +103,11 @@ export default function HomePage() {
   const exitBulkMode = useCallback(() => {
     setIsBulkMode(false);
     setSelectedIds(new Set());
-    setSelectAllMode(false);
+    setIsSelectingAll(false);
   }, []);
 
   const toggleSelect = useCallback((id: number) => {
     setIsBulkMode(true);
-    setSelectAllMode(false);
     setSelectedIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
@@ -116,30 +116,52 @@ export default function HomePage() {
     });
   }, []);
 
-  useEffect(() => {
-    if (!selectAllMode) return;
-    setSelectedIds(new Set(articleState.articles.map((a) => a.id)));
-  }, [selectAllMode, articleState.articles]);
-
   const isAllSelected =
-    selectAllMode ||
-    (articleState.articles.length > 0 &&
-      selectedIds.size === articleState.articles.length);
+    articleState.totalItems > 0 &&
+    selectedIds.size === articleState.totalItems;
 
-  const handleSelectAll = useCallback(() => {
-    if (selectAllMode || isAllSelected) {
-      setSelectAllMode(false);
+  const handleSelectAll = useCallback(async () => {
+    setIsBulkMode(true);
+    if (isAllSelected) {
       setSelectedIds(new Set());
-    } else {
-      setSelectAllMode(true);
-      setSelectedIds(new Set(articleState.articles.map((a) => a.id)));
+      return;
     }
-  }, [selectAllMode, isAllSelected, articleState.articles]);
+
+    setIsSelectingAll(true);
+    try {
+      const all = new Set<number>();
+      let cursor: string | undefined = undefined;
+      for (let i = 0; i < 1000; i += 1) {
+        const page = await listArticles({
+          isRead: filterState.isReadParam,
+          sort: filterState.sort,
+          q: filterState.searchQuery,
+          searchField: filterState.searchField,
+          category: filterState.selectedCategory,
+          cursor,
+          size: 50,
+        });
+        for (const item of page.items) all.add(item.id);
+        if (!page.hasNext || !page.nextCursor) break;
+        cursor = page.nextCursor;
+      }
+      setSelectedIds(all);
+    } finally {
+      setIsSelectingAll(false);
+    }
+  }, [
+    filterState.isReadParam,
+    filterState.sort,
+    filterState.searchQuery,
+    filterState.searchField,
+    filterState.selectedCategory,
+    isAllSelected,
+  ]);
 
   async function handleBulkDeleteConfirm() {
     setIsBulkDeleting(true);
     try {
-      await articleState.handleBulkDelete(Array.from(selectedIds), selectAllMode);
+      await articleState.handleBulkDelete(Array.from(selectedIds), false);
       setIsBulkDeleteConfirmOpen(false);
       exitBulkMode();
     } finally {
@@ -444,10 +466,10 @@ export default function HomePage() {
                               checked={isAllSelected}
                               indeterminate={selectedIds.size > 0 && !isAllSelected}
                               onChange={() => {
-                                if (!isBulkMode) setIsBulkMode(true);
-                                handleSelectAll();
+                                void handleSelectAll();
                               }}
                               onClick={(e) => e.stopPropagation()}
+                              disabled={isSelectingAll}
                               sx={{ p: 0, width: 20, height: 20 }}
                             />
                           ) : (
@@ -464,7 +486,7 @@ export default function HomePage() {
                   })()}
                   <Typography sx={{ fontSize: 14, fontWeight: 400, color: "#64748b", whiteSpace: "nowrap" }}>
                     {isBulkMode
-                      ? selectAllMode
+                      ? isAllSelected
                         ? `전체 ${articleState.totalItems}개 선택`
                         : `${selectedIds.size}개 선택`
                       : `${articleState.totalItems}개`}
@@ -476,7 +498,7 @@ export default function HomePage() {
                     <Stack direction="row" spacing={0.5} alignItems="center" sx={{ mr: "-5px" }}>
                       <IconButton
                         size="small"
-                        disabled={selectedIds.size === 0 && !selectAllMode}
+                        disabled={isSelectingAll || selectedIds.size === 0}
                         onClick={(e) => setBulkMenuAnchor(e.currentTarget)}
                         sx={{ color: "#475569" }}
                       >
@@ -494,7 +516,7 @@ export default function HomePage() {
                         <MenuItem
                           onClick={async () => {
                             setBulkMenuAnchor(null);
-                            await articleState.handleBulkToggleRead(Array.from(selectedIds), true, selectAllMode);
+                            await articleState.handleBulkToggleRead(Array.from(selectedIds), true, false);
                             exitBulkMode();
                           }}
                           sx={{ fontSize: 14 }}
@@ -505,7 +527,7 @@ export default function HomePage() {
                         <MenuItem
                           onClick={async () => {
                             setBulkMenuAnchor(null);
-                            await articleState.handleBulkToggleRead(Array.from(selectedIds), false, selectAllMode);
+                            await articleState.handleBulkToggleRead(Array.from(selectedIds), false, false);
                             exitBulkMode();
                           }}
                           sx={{ fontSize: 14 }}
@@ -538,9 +560,9 @@ export default function HomePage() {
                       <Button
                         variant="outlined"
                         size="small"
-                        disabled={selectedIds.size === 0 && !selectAllMode}
+                        disabled={isSelectingAll || selectedIds.size === 0}
                         onClick={async () => {
-                          await articleState.handleBulkToggleRead(Array.from(selectedIds), true, selectAllMode);
+                          await articleState.handleBulkToggleRead(Array.from(selectedIds), true, false);
                           exitBulkMode();
                         }}
                         startIcon={<CheckCircleOutlineIcon fontSize="small" />}
@@ -551,9 +573,9 @@ export default function HomePage() {
                       <Button
                         variant="outlined"
                         size="small"
-                        disabled={selectedIds.size === 0 && !selectAllMode}
+                        disabled={isSelectingAll || selectedIds.size === 0}
                         onClick={async () => {
-                          await articleState.handleBulkToggleRead(Array.from(selectedIds), false, selectAllMode);
+                          await articleState.handleBulkToggleRead(Array.from(selectedIds), false, false);
                           exitBulkMode();
                         }}
                         startIcon={<RadioButtonUncheckedIcon fontSize="small" />}
@@ -564,7 +586,7 @@ export default function HomePage() {
                       <Button
                         variant="outlined"
                         size="small"
-                        disabled={selectedIds.size === 0 && !selectAllMode}
+                        disabled={isSelectingAll || selectedIds.size === 0}
                         onClick={() => setIsBulkCategoryOpen(true)}
                         startIcon={<DriveFileRenameOutlineIcon fontSize="small" />}
                         sx={{ fontSize: 12, fontWeight: 500, whiteSpace: "nowrap", minWidth: 0, px: 1.5, borderColor: "#cbd5e1", color: "#475569", "&:hover": { borderColor: "#94a3b8", bgcolor: "#f8fafc" } }}
@@ -574,7 +596,7 @@ export default function HomePage() {
                       <Button
                         variant="outlined"
                         size="small"
-                        disabled={selectedIds.size === 0 && !selectAllMode}
+                        disabled={isSelectingAll || selectedIds.size === 0}
                         onClick={() => setIsBulkDeleteConfirmOpen(true)}
                         startIcon={<DeleteOutlineIcon fontSize="small" />}
                         sx={{ fontSize: 12, fontWeight: 500, whiteSpace: "nowrap", minWidth: 0, px: 1.5, borderColor: "#fca5a5", color: "error.main", "&:hover": { borderColor: "error.main", bgcolor: "#fff5f5" } }}
@@ -751,7 +773,7 @@ export default function HomePage() {
           onClose={() => setIsBulkCategoryOpen(false)}
           onAddCategory={categoryState.addCategory}
           onSave={async (category) => {
-            await articleState.handleBulkUpdateCategory(Array.from(selectedIds), category, selectAllMode);
+            await articleState.handleBulkUpdateCategory(Array.from(selectedIds), category, false);
             setIsBulkCategoryOpen(false);
             exitBulkMode();
           }}
@@ -787,7 +809,7 @@ export default function HomePage() {
           <DialogTitle sx={{ fontSize: 15, fontWeight: 700, pb: 1 }}>아티클 삭제</DialogTitle>
           <DialogContent sx={{ pt: 0, pb: 2 }}>
             <Typography sx={{ fontSize: 13, color: "#475569" }}>
-              선택된 {selectAllMode ? articleState.totalItems : selectedIds.size}개의 아티클을 삭제할까요?
+              선택된 {selectedIds.size}개의 아티클을 삭제할까요?
             </Typography>
             <Typography sx={{ fontSize: 12, color: "#94a3b8", mt: 0.5 }}>삭제된 아티클은 복구할 수 없습니다.</Typography>
           </DialogContent>
