@@ -13,6 +13,7 @@ import LogoutIcon from "@mui/icons-material/Logout";
 import MarkAsUnreadIcon from "@mui/icons-material/MarkAsUnread";
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 import PersonIcon from "@mui/icons-material/Person";
+import RateReviewIcon from "@mui/icons-material/RateReview";
 import SettingsIcon from "@mui/icons-material/Settings";
 import SearchIcon from "@mui/icons-material/Search";
 import VisibilityIcon from "@mui/icons-material/Visibility";
@@ -36,6 +37,7 @@ import { useTheme } from "@mui/material/styles";
 import { useEffect, useRef, useState, type MouseEvent } from "react";
 import { DRAWER_WIDTH, TOP_BAR_HEIGHT } from "@/constants/layout";
 import type { Category } from "@/lib/categories";
+import { FEEDBACK_FORM_URL } from "@/lib/links";
 import type { ArticleFilter } from "@/types";
 
 const CAT_MAX_LENGTH = 10;
@@ -303,6 +305,16 @@ export function SidebarFilters({
         <MenuItem component="a" href="/settings" onClick={() => setMenuAnchor(null)}>
           <ListItemIcon><SettingsIcon fontSize="small" /></ListItemIcon>
           <ListItemText primary="설정" primaryTypographyProps={{ fontSize: 13 }} />
+        </MenuItem>
+        <MenuItem
+          component="a"
+          href={FEEDBACK_FORM_URL}
+          target="_blank"
+          rel="noreferrer"
+          onClick={() => setMenuAnchor(null)}
+        >
+          <ListItemIcon><RateReviewIcon fontSize="small" /></ListItemIcon>
+          <ListItemText primary="의견 보내기" primaryTypographyProps={{ fontSize: 13 }} />
         </MenuItem>
         <MenuItem onClick={() => { void onLogout(); setMenuAnchor(null); }}>
           <ListItemIcon><LogoutIcon fontSize="small" /></ListItemIcon>
