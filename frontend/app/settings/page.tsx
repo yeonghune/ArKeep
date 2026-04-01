@@ -23,6 +23,7 @@ import { TOP_BAR_HEIGHT } from "@/constants/layout";
 import ArKeepLogo from "@/components/ArKeepLogo";
 import { getBootstrapPromise } from "@/lib/api";
 import { deleteAccount, logout } from "@/lib/auth";
+import { FEEDBACK_FORM_URL } from "@/lib/links";
 import { getMyProfile, type MyProfile } from "@/lib/profile";
 import { clearSession, getStoredSession } from "@/lib/session";
 
@@ -34,6 +35,7 @@ export default function SettingsPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [platformHint, setPlatformHint] = useState<"android_chrome" | "ios_safari" | "other">("other");
 
   useEffect(() => {
     void (async () => {
@@ -53,6 +55,18 @@ export default function SettingsPage() {
       }
     })();
   }, [router]);
+
+  useEffect(() => {
+    const ua = typeof navigator !== "undefined" ? navigator.userAgent : "";
+    const isAndroid = /Android/i.test(ua);
+    const isIOS = /iPhone|iPad|iPod/i.test(ua);
+    const isChromeLike = /Chrome|CriOS|EdgA|EdgiOS/i.test(ua);
+    const isSafari = /Safari/i.test(ua) && !isChromeLike;
+
+    if (isAndroid && /Chrome|EdgA/i.test(ua)) setPlatformHint("android_chrome");
+    else if (isIOS && isSafari) setPlatformHint("ios_safari");
+    else setPlatformHint("other");
+  }, []);
 
   const handleDeleteAccount = useCallback(async () => {
     setIsDeleting(true);
@@ -164,6 +178,89 @@ export default function SettingsPage() {
                 }}
               >
                 로그아웃
+              </Button>
+            </Box>
+          </Box>
+
+          {/* 홈 화면에 추가 */}
+          <Box
+            sx={{
+              bgcolor: "#fff",
+              borderRadius: 2,
+              border: "1px solid #e2e8f0",
+              overflow: "hidden",
+              mb: 2,
+            }}
+          >
+            <Box sx={{ px: 2.5, py: 2 }}>
+              <Typography sx={{ fontSize: 14, fontWeight: 700, color: "#1e293b" }}>홈 화면에 추가</Typography>
+              <Typography sx={{ fontSize: 12.5, color: "#64748b", mt: 0.5, lineHeight: 1.5 }}>
+                자주 쓰는 기능을 앱처럼 빠르게 열 수 있어요.
+              </Typography>
+            </Box>
+            <Divider />
+            <Box sx={{ px: 2.5, py: 2 }}>
+              {platformHint === "android_chrome" ? (
+                <Typography sx={{ fontSize: 13, color: "#475569", lineHeight: 1.7 }}>
+                  1) 우측 상단 <strong>⋮</strong> 메뉴를 열고<br />
+                  2) <strong>앱 설치</strong> 또는 <strong>홈 화면에 추가</strong>를 선택하세요.
+                </Typography>
+              ) : platformHint === "ios_safari" ? (
+                <Typography sx={{ fontSize: 13, color: "#475569", lineHeight: 1.7 }}>
+                  1) 하단의 <strong>공유</strong> 버튼을 누르고<br />
+                  2) <strong>홈 화면에 추가</strong>를 선택하세요.
+                </Typography>
+              ) : (
+                <Box>
+                  <Typography sx={{ fontSize: 13, color: "#475569", lineHeight: 1.7, mb: 1 }}>
+                    사용하는 브라우저에 따라 설치 방법이 달라요.
+                  </Typography>
+                  <Box sx={{ bgcolor: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 1.5, p: 1.5 }}>
+                    <Typography sx={{ fontSize: 12.5, fontWeight: 800, color: "#334155", mb: 0.75 }}>
+                      Android Chrome
+                    </Typography>
+                    <Typography sx={{ fontSize: 12.5, color: "#475569", lineHeight: 1.7, mb: 1.25 }}>
+                      우측 상단 <strong>⋮</strong> → <strong>앱 설치</strong> 또는 <strong>홈 화면에 추가</strong>
+                    </Typography>
+                    <Typography sx={{ fontSize: 12.5, fontWeight: 800, color: "#334155", mb: 0.75 }}>
+                      iOS Safari
+                    </Typography>
+                    <Typography sx={{ fontSize: 12.5, color: "#475569", lineHeight: 1.7 }}>
+                      하단 <strong>공유</strong>(□↑) → <strong>홈 화면에 추가</strong>
+                    </Typography>
+                  </Box>
+                </Box>
+              )}
+            </Box>
+          </Box>
+
+          {/* 의견 보내기 */}
+          <Box
+            sx={{
+              bgcolor: "#fff",
+              borderRadius: 2,
+              border: "1px solid #e2e8f0",
+              overflow: "hidden",
+              mb: 2,
+            }}
+          >
+            <Box sx={{ px: 2.5, py: 2 }}>
+              <Typography sx={{ fontSize: 14, fontWeight: 700, color: "#1e293b" }}>의견 보내기</Typography>
+              <Typography sx={{ fontSize: 12.5, color: "#64748b", mt: 0.5, lineHeight: 1.5 }}>
+                불편한 점이나 개선 아이디어가 있다면 알려주세요. 빠르게 반영할게요.
+              </Typography>
+            </Box>
+            <Divider />
+            <Box sx={{ px: 2.5, py: 2 }}>
+              <Button
+                variant="contained"
+                component="a"
+                href={FEEDBACK_FORM_URL}
+                target="_blank"
+                rel="noreferrer"
+                sx={{ textTransform: "none", fontSize: 14, borderRadius: 1.5, boxShadow: "none" }}
+              >
+                구글 폼 열기
               </Button>
             </Box>
           </Box>

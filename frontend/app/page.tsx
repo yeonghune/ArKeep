@@ -330,7 +330,6 @@ export default function LandingPage() {
 
   return (
     <Box sx={{ minHeight: "100dvh", bgcolor: "#ffffff", display: "flex", flexDirection: "column" }}>
-
       {/* Navbar */}
       <Box
         component="nav"
@@ -563,7 +562,7 @@ export default function LandingPage() {
               개인정보처리방침
             </MuiLink>
           </Stack>
-          <Typography sx={{ fontSize: 12, color: "#cbd5e1" }}>© {new Date().getFullYear()} ArKeep. All rights reserved.</Typography>
+          <Typography sx={{ fontSize: 12, color: "#cbd5e1" }}>© {new Date().getFullYear()} ArKeep</Typography>
         </Stack>
       </Box>
     </Box>
