@@ -3,6 +3,7 @@
 import ArKeepLogo from "@/components/ArKeepLogo";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import AddIcon from "@mui/icons-material/Add";
 import BookmarkAddedIcon from "@mui/icons-material/BookmarkAdded";
@@ -22,6 +23,7 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import CircularProgress from "@mui/material/CircularProgress";
 import Divider from "@mui/material/Divider";
+import MuiLink from "@mui/material/Link";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { useSession } from "@/hooks/useSession";
@@ -530,9 +532,39 @@ export default function LandingPage() {
           <ArKeepLogo size={18} />
           <Typography sx={{ fontSize: 13, color: "#94a3b8", fontWeight: 600 }}>ArKeep</Typography>
         </Stack>
-        <Typography sx={{ fontSize: 12, color: "#cbd5e1" }}>
-          © {new Date().getFullYear()} ArKeep. All rights reserved.
-        </Typography>
+        <Stack direction="row" spacing={2} alignItems="center" sx={{ flexWrap: "wrap" }}>
+          <Stack direction="row" spacing={1.5} alignItems="center">
+            <MuiLink
+              component={Link}
+              href="/terms"
+              underline="none"
+              sx={{
+                fontSize: 12,
+                color: "#94a3b8",
+                fontWeight: 600,
+                "&:hover": { color: "#64748b" },
+                "&:focus-visible": { outline: "2px solid #93c5fd", outlineOffset: 3, borderRadius: 1 },
+              }}
+            >
+              이용약관
+            </MuiLink>
+            <MuiLink
+              component={Link}
+              href="/privacy"
+              underline="none"
+              sx={{
+                fontSize: 12,
+                color: "#94a3b8",
+                fontWeight: 600,
+                "&:hover": { color: "#64748b" },
+                "&:focus-visible": { outline: "2px solid #93c5fd", outlineOffset: 3, borderRadius: 1 },
+              }}
+            >
+              개인정보처리방침
+            </MuiLink>
+          </Stack>
+          <Typography sx={{ fontSize: 12, color: "#cbd5e1" }}>© {new Date().getFullYear()} ArKeep. All rights reserved.</Typography>
+        </Stack>
       </Box>
     </Box>
   );
